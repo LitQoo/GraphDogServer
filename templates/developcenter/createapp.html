@@ -1,0 +1,36 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+
+		<table align=center border=1>
+		<form action="createapp.html" method=post>
+		<tr>
+			<td colspan="2"> Create App </td>
+		</tr>
+		<tr>
+			<td>title</td>
+			<td><input name=title></td>
+		</tr>
+		<tr>
+			<td>secretKey</td>
+			<td><input name=secretKey value="{{ secretkey }}"></td>
+		</tr>
+		<tr>
+			<td>scoresSortType</td>
+			<td><input name=scoresSortType value="people"> people || time</td>
+		</tr>
+		<tr>
+			<td>scoresSortValue</td>
+			<td><input name=scoresSortValue value="100"></td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<a href=appmanager.html>back</a>
+				<input type=submit name="submit_btn" value="Create">
+			</td>
+		</tr>
+		</form>
+		</table>
+		
+
+
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+
+<a href=createapp.html> createApp</a>
+
+		applist
+		<table border=1>
+			{% for app in appList %}
+				<tr>
+					<td><a href=appview.html?aid={{app.key}}>{{app.title}}</a></td>
+					<td>{{app.secretKey}}</td>
+					<td>{{app.key}}</td>
+					<td>{{app.scoresSortType}}</td>
+					<td>{{app.scoresSortValue}}</td>
+				</tr>
+			{% endfor %}
+		</table>
+{% endblock %}

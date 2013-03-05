@@ -1,0 +1,13 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+
+	{% if developer_email %}
+		hello! {{ developer_nickname }} ( {{ developer_email }} )<br>
+		<a href=developcenter/appManager.html>AppManager</a> <br>
+		<a href={{ logouturl }}>logout</a>
+	{% else %}
+		<a href={{ loginurl }}>login With Google</a>
+	{% endif %}
+
+	
+{% endblock %}

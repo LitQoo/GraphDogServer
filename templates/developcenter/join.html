@@ -1,0 +1,28 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+		<table align=center border=1>
+		<form action="/developcenter/join" method=post>
+		<tr>
+			<td colspan="2"> Join </td>
+		</tr>
+		<tr>
+			<td>email</td>
+			<td><input name=email></td>
+		</tr>
+		<tr>
+			<td>password</td>
+			<td><input type=password name=password1><br><input type=password name=password2></td>
+		</tr>
+		<tr>
+			<td>name</td>
+			<td><input name=name></td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<a href=/developcenter>back</a>
+				<input type=submit name="submit_btn" value="Join">
+			</td>
+		</tr>
+		</form>
+		</table>
+{% endblock %}

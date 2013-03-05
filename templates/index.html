@@ -1,0 +1,77 @@
+<html>
+	<head>
+		<title>Graph Dog!!</title>
+	</head>
+	<body>
+		<br><br>
+		<center>
+		welcome to Graph Dog!!!<br><br><br>
+		
+		<a href=/developcenter>go to Developer Center</a>
+		</center>
+		
+		
+		<table border=1>
+		<tr>
+		<td>
+			연결 
+		</td>
+		<td><pre>
+		void start(string appID,string secretKey,string deviceId,JsonBox::Object *param,CCObject *target,GDSelType selector);
+		
+		ex)
+		JsonBox::Object param;
+		GraphDog::get()->start("appID","SCKEY",getDeviceID(),&param,this,gd_selector(CLASS:function));
+		
+		appID - 생성한 앱의 아이디
+		secretKey - 생성한 앱의 비밀코드
+		deviceId - 현재기기의 유니크아이디
+		param - 파라메터
+		target,selector - 결과 콜백받을 함수지정
+		
+		가능한 파라메터
+		(string)nextAction - 시작하면서 바로 수행할 명령
+		(JsonBox::Value)nextParam - 시작하면서 바로수행할 명령의 파라메터
+		</td>
+		</tr>
+		<tr>
+		<td>
+			명령
+		</td>
+		<td><pre>
+		bool command(string action,JsonBox::Object *param,CCObject *target,GDSelType selector);
+		
+		ex)
+		JsonBox::Object param;
+		GraphDog::get()->start("startScores",&param,this,gd_selector(CLASS:function));
+		
+		action - 수행할 명령
+		param - 명령에 필요한 파라메터
+		target,selector - 결과 콜백받을 함수
+		</td>
+		</tr>
+		<tr>
+		<td>
+			명령(action)의 종류
+		</td>
+		<td><pre>
+getAuInfo - 앱유저정보 (nick,flag,exp,userdata,requests,maxScore,weeklyScore ...)
+getUInfo - 유저정보 (nick,flag,installs(=설치한 앱목록)...)
+saveUserData - 앱유저정보의 userdata를 저장
+getNotices - 앱 공지사항(text,userdata)
+getHouseAd - 하우스애드 불러오기(text,image,store,userdata)
+getAInfo - 앱정보(title,store,...)
+startScores - 실시간랭킹시작
+getScores - 실시간랭킹표 불러오기 (list,alluser)
+getFlagRank - 국가별순위 불러오기 (list,alluser)
+getCPIList - CPI앱목록
+addCPIEvent - CPI앱이벤트시작
+getRequests - 요청목록불러오기
+sendRequests - 다른유저에게 요청보내기
+removeRequests - 요청삭제하기
+		</td>
+		</tr>
+		</table>
+		
+	</body>
+</html>
