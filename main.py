@@ -24,7 +24,9 @@ from webapp2_extras import sessions
 from Crypto.Cipher import DES
 from Crypto.Hash import MD5
 from google.appengine.api import users
-
+import json
+import base64
+import time
 
 #render function
 def doRender(handler,tname='index.html',values={}):
@@ -104,23 +106,13 @@ class UniqueConstraintViolation(Exception):
     def __init__(self, scope, value):
         super(UniqueConstraintViolation, self).__init__("Value '%s' is not unique within scope '%s'." % (value, scope, ))
 #############################################################################
-# handler 안녕
+# handler
 #############################################################################
 
 
 class MainHandler(SessionBaseHandler):
     def get(self):
     	path = self.request.path
-    	foo = self.session.get('foo')
-    	if not foo:
-    		foo = 0
-    	
-    	self.response.write('foo : ' + str(foo) + '<br>')
-
-    	foo=foo+1
-    	self.session['foo'] = foo
-
-
 
     	if doRender(self,path):
     		return
@@ -129,8 +121,70 @@ class MainHandler(SessionBaseHandler):
 
 class CommandHandler(SessionBaseHandler):
 	def post(self):
-		self.response.write('gogogogo')
+		path = self.request.path
+		action = self.request.get('action')
+		aid = self.request.get('aid')
+		token = self.request.get('token')
+		param = self.decParam(self.request.get('param'))
+		
+		#find app
+		try:
+			ak = db.Key(aid)
+			app = DB_App.get(ak)
+		except Exception, e:
+			self.response.write('''{"state":"error","error":"dont find app"}''')
+			return
 
+		#dec token
+		tokens = self.decToken(token,'GDSK5438')
+
+		cTime = time.time()
+
+
+		# if not param.get('callback'):
+		# 	param['callback']=0
+
+		result = {'action':action , 'callback': param.get('callback')}
+
+		t = int(time.time())
+		self.response.write('timestamp:'+str(t))
+
+		# for k in param:
+		# 	self.response.write(k + ' : ' + param[k] + '<br>')
+
+	def get(self):
+		self.post()
+
+	def decParam(self,param):
+		try:
+			re = base64.decodestring(param)
+			re = json.loads(re) #json.dumps
+		except Exception, e:
+			return ''
+		return re
+	def decToken(self,token,skey):
+		re={}
+		try:
+			token=token.replace(" ","+")
+			to = base64.decodestring(token)
+			#to = to + ' '*(8-len(to)%8)
+			obj = DES.new(skey,DES.MODE_ECB)
+			to=obj.decrypt(to)
+			to=to.split('||')
+			re['auID']=to[0]
+			re['udid']=to[1]
+			re['flag']=to[2]
+			re['nick']=to[3]
+			re['email']=to[4]
+			re['platform']=to[5]
+			re['createTime']=to[6]
+		except Exception, e:
+			return re
+		return re
+
+# GDSK5428
+#http://localhost:8080/command/?action=start&aid=agxkZXZ-Z3JhcGhkb2dyDAsSBkRCX0FwcBgyDA&param=ewoJIm5leHRBY3Rpb24iIDogImdldFJlcXVlc3RzIiwKCSJuZXh0UGFyYW0iIDogewoJCSJ0eXBlIiA6ICJhbGwiCgl9Cn0=&token=7QfVMt4f3eA0ja+TRsPkfggmtYGnRH9oNyD8kAJ+lSQJoOIXomjmgNiVICaG4QyfDJE93cZDqgy78qbLB48EhoW+P+lUFGMG14vCI8ANnUMdYcx3KEXsYA==
+#test action=start&aID=5124e0b9ae52a09358000031&param=ewoJIm5leHRBY3Rpb24iIDogImdldFJlcXVlc3RzIiwKCSJuZXh0UGFyYW0iIDogewoJCSJ0eXBlIiA6ICJhbGwiCgl9Cn0=&token=7QfVMt4f3eA0ja+TRsPkfggmtYGnRH9oNyD8kAJ+lSQJoOIXomjmgNiVICaG4QyfDJE93cZDqgy78qbLB48EhoW+P+lUFGMG14vCI8ANnUMdYcx3KEXsYA==
 class DevelopCenterHandler(SessionBaseHandler):
 	def get(self):
 		path = self.request.path
@@ -140,6 +194,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 		developer={}
 		if user:
 			developer = DB_Developer.get_by_key_name(user.email())
+
 
 		#check email and join
 		if path == '/developcenter/login':
@@ -157,10 +212,9 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values['loginurl'] = users.create_login_url("/developcenter/login")
 		values['logouturl'] = users.create_logout_url("/developcenter/logout")
 
-		if path == '/developcenter/appmanager':
+		if path == '/developcenter/appmanager.html':
 			if not developer:
 				return
-			path = path + '.html'
 			que = db.Query(DB_App)
 			que = que.filter('developer =',developer.key())
 			appList = que.fetch(limit=100)
@@ -202,6 +256,7 @@ app = webapp2.WSGIApplication([
 	('/developcenter', DevelopCenterHandler),
 	('/developcenter/.*', DevelopCenterHandler),
 	('/command', CommandHandler),
+	('/command/.*', CommandHandler),
     ('/.*', MainHandler)
 ],
 config=config,
@@ -213,7 +268,18 @@ debug=True)
 #############################
 ##한글
 ##############################
+		# 세션
+    	# foo = self.session.get('foo')
+    	# if not foo:
+    	# 	foo = 0
+    	
+    	# self.response.write('foo : ' + str(foo) + '<br>')
 
+    	# foo=foo+1
+    	# self.session['foo'] = foo
+
+
+    	# 데이터스토어 테이블명 마음대로 하기
     	# exec '''class testdb(DB_App):
     	# 	@classmethod
     	# 	def kind(cls):
