@@ -1,0 +1,73 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+		<a href=appmanager.html>back</a>
+		<table align=center border=1>
+		<form action="createtoken.html" method=post>
+		<tr>
+			<td colspan="2"> Create Token </td>
+		</tr>
+		<tr bgcolor=cccccc>
+			<td>aID</td>
+			<td><input name=aID value={{aID}}></td>
+		</tr>
+		<tr bgcolor=cccccc>
+			<td>action</td>
+			<td><input name=action value={{action}}></td>
+		</tr>
+		<tr>
+			<td>auID</td>
+			<td><input name=auID size=50 value={{auID}}></td>
+		</tr>
+		<tr>
+			<td>udid</td>
+			<td><input name=udid size=50 value={{udid}}></td>
+		</tr>
+		<tr>
+			<td>flag</td>
+			<td><input name=flag size=50 value={{flag}}></td>
+		</tr>
+		<tr>
+			<td>nick</td>
+			<td><input name=nick size=50 value={{nick}}></td>
+		</tr>
+		<tr>
+			<td>email</td>
+			<td><input name=email size=50 value={{email}}></td>
+		</tr>
+		<tr>
+			<td>platform</td>
+			<td><input name=platform size=50 value={{platform}}></td>
+		</tr>
+		<tr>
+			<td>createTime</td>
+			<td><input name=createTime size=50 value={{createTime}}></td>
+		</tr>
+		<tr bgcolor=cccccc>
+			<td>secretKey</td>
+			<td><input name=secretKey value={{secretKey}}></td>
+		</tr>
+		<tr bgcolor=cccccc>
+			<td>param(json)</td>
+			<td><textarea cols=50 rows=10 name=param>{{param}}</textarea></td>
+		</tr>
+
+		<tr>
+			<td colspan="2">
+				<a href=appmanager.html>back</a>
+				<input type=submit name="submit_btn" value="Create">
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				token={{enctoken}}<br>{{dectoken}}		 <br><br>
+				param={{encparam}}<br>{{decparam}}		<br><br>
+				<br><br>url<br>
+				action={{action}}&amp;aID={{aID}}&amp;token={{enctoken}}&amp;param={{encparam}}
+			</td>
+		</tr>
+		</form>
+		</table>
+		
+
+
+{% endblock %}
