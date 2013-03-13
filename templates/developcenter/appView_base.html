@@ -1,0 +1,48 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+<table border=1>
+	<tr><td>
+<table align=center border=1>
+	<form action="createapp.html" method=post>
+	<tr>
+		<td colspan="2"> Create App </td>
+	</tr>
+	<tr>
+		<td>title</td>
+		<td><input name=title value="{{ aInfo.title }}"></td>
+	</tr>
+	<tr>
+		<td>aID</td>
+		<td><input name=aID value="{{ aInfo.key.id|safe }}"> (a~Z a~z 0~9)</td>
+	</tr>
+	<tr>
+		<td>secretKey</td>
+		<td><input name=secretKey value="{{ aInfo.secretKey }}"></td>
+	</tr>
+	<tr>
+		<td>scoresSortType</td>
+		<td><input name=scoresSortType  value="{{ aInfo.scoresSortType }}"> people || time</td>
+	</tr>
+	<tr>
+		<td>scoresSortValue</td>
+		<td><input name=scoresSortValue  value="{{ aInfo.scoresSortValue }}"></td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<a href=appmanager.html>back</a>
+			<input type=submit name="submit_btn" value="Create">
+		</td>
+	</tr>
+	</form>
+</table>
+	</td></tr>
+	<tr><td>
+		<table border=1><tr><td><a href=appView.html?mode=notive>notice</a></td><td>house ad</td><td>users</td><td></td></tr></table>
+	</td></tr>
+	<tr><td>
+		{% block editor %} {% endblock %}
+	</td></tr>
+	<tr><td>
+			{% block list %} {% endblock %} 
+	</td></tr>
+{% endblock %}

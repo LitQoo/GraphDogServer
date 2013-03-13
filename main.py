@@ -75,6 +75,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 		user = users.get_current_user()
 		
 		developer={}
+
 		if user:
 			developer=ndb.Key('DB_Developer',user.email()).get()
 		
@@ -91,19 +92,32 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values['loginurl'] = users.create_login_url("/developcenter")
 		values['logouturl'] = users.create_logout_url("/developcenter")
 
-		if path == '/developcenter/appmanager.html':
-			if not developer:
-				return
+		if path == '/developcenter/index.html':
+			doRender(self,path,values)
 
-		if developer:
+		if not developer:
+			return
+
+		if path == '/developcenter/appmanager.html':	####################################################################
 			que = DB_App.query(DB_App.developer == developer.key)
 			appList = que.fetch()
 			values['appList']=appList
 
+		if path == '/developcenter/appView.html':		####################################################################
+			logging.info('appView')
+			mode = self.request.get('mode')
+			if not mode:
+				mode = 'notice'
+
+			if mode == 'notice':
+				aID = self.request.get('aID')
+				values['aInfo'] = ndb.Key(urlsafe=aID).get()
+				logging.info(values.get('aInfo'))
+
 		if doRender(self,path,values):
 			return
 
-   		doRender(self,'developcenter/index.html',values)
+   		#doRender(self,'developcenter/index.html',values)
 	def post(self):
 		path = self.request.path
 		
@@ -129,6 +143,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['dectoken']= CommandHandler.decToken(values['enctoken'],values['secretKey'])
 			values['decparam']= CommandHandler.decParam(values['encparam'])
 			doRender(self,path,values)
+
 		if path == '/developcenter/createapp.html':
 			user = users.get_current_user()
 			developer={}

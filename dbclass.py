@@ -59,7 +59,6 @@ class DB_AppNotice(ndb.Model):
 	text = ndb.TextProperty()
 	userData = ndb.JsonProperty()
 
-class
 
 
 class DB_AppData(ndb.Model):

@@ -8,7 +8,7 @@
 		<table border=1>
 			{% for app in appList %}
 				<tr>
-					<td><a href=appview.html?aID={{app.key}}>{{app.title}}</a></td>
+					<td><a href=appView.html?aID={{app.key.urlsafe}}>{{app.title}}</a></td>
 					<td>{{app.aID}}</td>
 					<td>{{app.secretKey}}</td>
 					<td>{{app.scoresSortValue}}</td>
