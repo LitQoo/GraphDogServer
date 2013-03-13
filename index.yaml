@@ -9,3 +9,49 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
+
+- kind: DB_App
+  properties:
+  - name: developer
+  - name: scoresSortValue
+
+- kind: DB_AppScore
+  properties:
+  - name: __key__
+    direction: desc
+
+- kind: DB_AppScore
+  properties:
+  - name: gType
+  - name: sTime
+  - name: score
+
+- kind: DB_AppScore
+  properties:
+  - name: gType
+  - name: sTime
+  - name: score
+    direction: desc
+
+- kind: DB_AppScore
+  properties:
+  - name: sTime
+  - name: score
+
+- kind: DB_AppScore
+  properties:
+  - name: sTime
+  - name: score
+    direction: desc
+
+- kind: app_testapps_score
+  properties:
+  - name: __key__
+    direction: desc
+
+- kind: testModel
+  properties:
+  - name: int1
+    direction: desc
+  - name: int2
+    direction: desc

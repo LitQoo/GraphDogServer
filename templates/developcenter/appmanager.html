@@ -9,9 +9,8 @@
 			{% for app in appList %}
 				<tr>
 					<td><a href=appview.html?aID={{app.key}}>{{app.title}}</a></td>
-					<td>{{app.appID}}</td>
+					<td>{{app.aID}}</td>
 					<td>{{app.secretKey}}</td>
-					<td>{{app.scoresSortType}}</td>
 					<td>{{app.scoresSortValue}}</td>
 				</tr>
 			{% endfor %}
