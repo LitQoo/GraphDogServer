@@ -1,0 +1,26 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+{% endblock %}
+
+{% block list %} 
+		<table width=100% border=1>
+			<tr>
+				<td>no</td>
+				<td>nick</td>
+				<td>flag</td>
+				<td>udid</td>
+				<td>joindate</td>
+			</tr>
+		{% for appuser in userList %}
+			<tr>
+				<td>{{appuser.key.urlsafe}}</td>
+				<td>{{appuser.nick}}</td>
+				<td>{{appuser.flag}}</td>
+				<td>{{appuser.udid}}</td>
+				<td>
+					{{appuser.joinDate}}
+				</td>
+			</tr>
+		{%endfor%}
+	</table>
+{% endblock %}

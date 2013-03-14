@@ -3,41 +3,58 @@
 <table border=1>
 	<tr><td>
 <table align=center border=1>
-	<form action="createapp.html" method=post>
+	<form action="appView.html" method=post>
 	<tr>
-		<td colspan="2"> Create App </td>
+		<td colspan="2">AppInfo </td>
 	</tr>
 	<tr>
 		<td>title</td>
-		<td><input name=title value="{{ aInfo.title }}"></td>
+		<td><input name=title value="{{ aInfo.title|safe }}"></td>
 	</tr>
 	<tr>
 		<td>aID</td>
-		<td><input name=aID value="{{ aInfo.key.id|safe }}"> (a~Z a~z 0~9)</td>
+		<td><input name=aID value="{{ aInfo.aID|safe }}" readonly> (a~Z a~z 0~9)</td>
 	</tr>
 	<tr>
 		<td>secretKey</td>
-		<td><input name=secretKey value="{{ aInfo.secretKey }}"></td>
+		<td><input name=secretKey value="{{ aInfo.secretKey|safe }}"></td>
 	</tr>
-	<tr>
-		<td>scoresSortType</td>
-		<td><input name=scoresSortType  value="{{ aInfo.scoresSortType }}"> people || time</td>
-	</tr>
+
 	<tr>
 		<td>scoresSortValue</td>
-		<td><input name=scoresSortValue  value="{{ aInfo.scoresSortValue }}"></td>
+		<td><input name=scoresSortValue  value="{{ aInfo.scoresSortValue|safe }}"></td>
 	</tr>
 	<tr>
-		<td colspan="2">
+		<td>useCPI</td>
+		<td><input type=checkbox value=true name=useCPI {% if aInfo.useCPI %} checked {% endif %}>
+			<br>
+			banner <input name=bannerImg  value="{{ aInfo.bannerImg|safe }}"> (320x50)<br>
+			icon <input name=iconImg  value="{{ aInfo.iconImg|safe }}"> (50x50)<br>
+			store <input name=store  value="{{ aInfo.store|safe }}">
+		</td>
+	</tr>
+
+
+		<tr>
+		<td colspan="2" align=center>
 			<a href=appmanager.html>back</a>
-			<input type=submit name="submit_btn" value="Create">
+			<input type=submit value="save">
 		</td>
 	</tr>
 	</form>
 </table>
 	</td></tr>
 	<tr><td>
-		<table border=1><tr><td><a href=appView.html?mode=notive>notice</a></td><td>house ad</td><td>users</td><td></td></tr></table>
+		<table border=1><tr><td>
+			<a href=appView_notice.html?aID={{aID}}>notice</a>
+
+		</td><td>
+			<a href=appView_explorer.html?aID={{aID}}>explorer</a></td>
+
+			<td><a href=appView_user.html?aID={{aID}}>user</a></td>
+
+
+			<td></td></tr></table>
 	</td></tr>
 	<tr><td>
 		{% block editor %} {% endblock %}

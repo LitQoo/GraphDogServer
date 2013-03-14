@@ -1,0 +1,44 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+<form action=appView_notice.html method=post>
+	<input type=hidden name=aID value={{aID|safe}}>
+			title:<input type=text name=title value={{notice.title|safe}}><br>
+			content<br>
+			<textarea row=10 cols=30 name=content>{{notice.content|safe}}</textarea> <br>
+			userdata<br>
+			<textarea row=10 cols=30 name=userData></textarea> <br>
+			platform:<select name=platform>
+				<option value=all>all</option>
+				<option value=ios>ios</option>
+				<option value=android>android</option>
+			</select><br>
+			<input type=submit value='save'>
+</form>
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+		<table width=100% border=1>
+			<tr>
+				<td>no</td>
+				<td>title</td>
+				<td>content</td>
+				<td>platform</td>
+				<td>time</td>
+			</tr>
+		{% for notice in noticeList %}
+			<tr>
+				<td>{{notice.key.id}}</td>
+				<td>{{notice.title}}</td>
+				<td>{{notice.content}}</td>
+				<td>{{notice.platform}}</td>
+				<td>
+					{{notice.createTime}}
+				</td>
+			</tr>
+		{%endfor%}
+	</table>
+	{% endif %}
+{% endblock %}

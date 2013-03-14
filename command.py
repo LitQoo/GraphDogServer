@@ -86,17 +86,18 @@ class CommandHandler(SessionBaseHandler):
 		result = {'action':action , 'callback': param.get('callback'), 'createTime':str(cTime)}
 
 		# timestamp action
-		if action == 'timestamp':
+		if action == 'timestamp': ##########################################################################
 			result['timestamp'] = int(cTime)
 			result['state']='ok'
 
 		# getweek
-		if action == 'getweek':
+		if action == 'getweek': ##########################################################################
 			result['week']=int(datetime.date.today().strftime("%U"))
+			result['lefttime']=int(2400)
 			
 
 		# start action
-		if action == 'start':	#로그인하기
+		if action == 'start':	#로그인하기 ##########################################################################
 			#auID있으면 au정보 뽑아오기~
 			if tokens.get('auID'):
 				try:
@@ -112,17 +113,17 @@ class CommandHandler(SessionBaseHandler):
 				logging.info("user finded")
 				# name , flag 확인해서 업데이트하기
 				if auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
-					logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
+					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
 					
 					namespace_manager.set_namespace(gdNamespace)
-					uInfo=DB_User.get(auInfo.uInfo.key)
+					uInfo=auInfo.uInfo.get()
 					uInfo.nick = auInfo.nick = tokens.get('nick')
 					uInfo.flag = auInfo.flag = tokens.get('flag')
 					uInfo.put()
 
 				#createTime update
 					namespace_manager.set_namespace(appNamespace)
-					auInfo.createTime=cTime
+					auInfo.createTime=str(cTime)
 					auInfo.put()
 
 				#weekly점수 검사후 초기화!##############################
@@ -203,7 +204,7 @@ class CommandHandler(SessionBaseHandler):
 			self.printError('error',100)
 
 		#action startscores
-		if action == 'getflagranks':#점수시작~
+		if action == 'getflagranks':#점수시작~ ##########################################################################
 			namespace_manager.set_namespace(appNamespace)
 			startTime = int(cTime)/scoresSortValue*scoresSortValue
 			result['leftTime'] = int(cTime)-startTime
@@ -230,7 +231,7 @@ class CommandHandler(SessionBaseHandler):
 			
 
 		#action startscores
-		if action == 'startscores':#점수시작~
+		if action == 'startscores':#점수시작~ ##########################################################################
 			logging.info('startscores')
 		#param ->  type, score, userdata, 
 			gType = param.get('type')
@@ -265,7 +266,7 @@ class CommandHandler(SessionBaseHandler):
 			result['state']='ok'
 
 
-		if action == 'getscores':
+		if action == 'getscores': ##########################################################################
 			
 			namespace_manager.set_namespace(appNamespace)
 			asInfo = ndb.Key(urlsafe=self.session.get('asID')).get()
@@ -325,6 +326,51 @@ class CommandHandler(SessionBaseHandler):
 					result['list'].append(_new)
 					rank=rank+1
 
+		if action == 'getnotices':
+			namespace_manager.set_namespace(appNamespace)
+			# param - lastNoticeID, 
+			#          limit = true, false
+			lastNoticeID = param.get('lastNoticeID')
+			limit = param.get('limit')
+			if not lastNoticeID :
+				lastNoticeID=0
+			#DB_AppNotice.key.id>lastNoticeID
+			noticeList = DB_AppNotice.query().order(-DB_AppNotice.key).fetch(limit)
+			result['noticeList']=[]
+			for notice in noticeList:
+				noticedict = {}
+				noticedict['id']=notice.key.id()
+				noticedict['title']=notice.title
+				noticedict['content']=notice.content
+				noticedict['userData']=notice.userData
+				noticedict['platform']=notice.platform
+				noticedict['createTime']=notice.createTime
+				result['noticeList'].append(noticedict)
+
+		if action == 'getcpilist':
+			namespace_manager.set_namespace(gdNamespace)
+			cpiList = DB_App.query(DB_App.useCPI == True).fetch(10)
+			result['cpiList']=[]
+			for cpi in cpiList:
+				if cpi.key.id() == aID:
+					continue
+
+				cpidict = {}
+				cpidict['title']=cpi.title
+				cpidict['bannerImg']=cpi.bannerImg
+				cpidict['iconImg']=cpi.iconImg
+				cpidict['store']=cpi.store
+				result['cpiList'].append(cpidict)
+
+			result['state']='ok'
+			
+		if action == 'addcpievent':
+			namespace_manager.set_namespace(gdNamespace)
+			cpiappid = param.get('aID')
+			user = auInfo.uInfo.get()
+			user.cpiEvents.append(cpiappid)
+			user.put()
+			result['state']='ok'
 
 		#결과리턴
 		self.response.write(json.dumps(result))

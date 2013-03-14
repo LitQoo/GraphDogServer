@@ -15,6 +15,11 @@ indexes:
   - name: developer
   - name: scoresSortValue
 
+- kind: DB_AppNotice
+  properties:
+  - name: __key__
+    direction: desc
+
 - kind: DB_AppScore
   properties:
   - name: __key__
@@ -42,6 +47,11 @@ indexes:
   properties:
   - name: sTime
   - name: score
+    direction: desc
+
+- kind: DB_AppUser
+  properties:
+  - name: __key__
     direction: desc
 
 - kind: app_testapps_score

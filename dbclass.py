@@ -25,12 +25,17 @@ class DB_App(ndb.Model):
 	scoresSortValue = ndb.IntegerProperty()
 	developer = ndb.KeyProperty()
 	useCPI = ndb.BooleanProperty()
+	bannerImg = ndb.StringProperty()
+	iconImg=ndb.StringProperty()
+	store = ndb.JsonProperty()
+
 
 class DB_User(ndb.Model):
 	nick = ndb.StringProperty()
 	flag = ndb.StringProperty()
 	udid = ndb.StringProperty()
 	installs = ndb.StringProperty(repeated=True)
+	cpiEvents = ndb.StringProperty(repeated=True)
 
 class DB_AppUser(ndb.Model):
 	nick = ndb.StringProperty()
@@ -39,6 +44,7 @@ class DB_AppUser(ndb.Model):
 	createTime = ndb.StringProperty()
 	udid = ndb.StringProperty()
 	userData = ndb.JsonProperty()
+	joinDate = ndb.DateProperty(auto_now=True)
 
 class DB_AppScore(ndb.Model):
 	auInfo=ndb.KeyProperty(DB_AppUser)
@@ -53,11 +59,11 @@ class DB_AppScore(ndb.Model):
 	userData = ndb.JsonProperty()
 
 class DB_AppNotice(ndb.Model):
-	parent = ndb.KeyProperty()
-	lang = ndb.StringProperty()
 	title=ndb.StringProperty()
-	text = ndb.TextProperty()
+	content = ndb.TextProperty()
 	userData = ndb.JsonProperty()
+	platform = ndb.StringProperty()
+	createTime = ndb.IntegerProperty()
 
 
 

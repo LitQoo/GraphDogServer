@@ -2,13 +2,14 @@
 {% block bodycontent %}
 
 <a href=createapp.html> createApp</a><br>
-<a href=createtoken.html> createToken</a><br><br>
+<a href=createtoken.html> createToken</a><br>
+<a href={{logouturl}}> logout</a><br><br>
 		
 		applist
 		<table border=1>
 			{% for app in appList %}
 				<tr>
-					<td><a href=appView.html?aID={{app.key.urlsafe}}>{{app.title}}</a></td>
+					<td><a href=appView.html?aID={{app.aID}}>{{app.title}}</a></td>
 					<td>{{app.aID}}</td>
 					<td>{{app.secretKey}}</td>
 					<td>{{app.scoresSortValue}}</td>

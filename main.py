@@ -35,6 +35,7 @@ import logging
 import random
 from dbclass import *
 from SessionBaseHandler import *
+from command import CommandHandler
 #render function
 def doRender(handler,tname='index.html',values={}):
 	temp = os.path.join(
@@ -73,8 +74,8 @@ class DevelopCenterHandler(SessionBaseHandler):
 		path = self.request.path
 		values = {}
 		user = users.get_current_user()
-		
 		developer={}
+
 
 		if user:
 			developer=ndb.Key('DB_Developer',user.email()).get()
@@ -92,27 +93,30 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values['loginurl'] = users.create_login_url("/developcenter")
 		values['logouturl'] = users.create_logout_url("/developcenter")
 
-		if path == '/developcenter/index.html':
-			doRender(self,path,values)
+		if path == '/developcenter/index.html' or path == '/developcenter' or  path == '/developcenter/':
+			doRender(self,'/developcenter/index.html',values)
 
 		if not developer:
 			return
 
+		aID = self.request.get('aID')
+
+		if aID:
+			gdNamespace = namespace_manager.get_namespace()
+			appNamespace = 'APP_'+aID
+			values['aInfo'] = DB_App.get_by_id(aID)
+			values['aID']=aID;
+		
 		if path == '/developcenter/appmanager.html':	####################################################################
-			que = DB_App.query(DB_App.developer == developer.key)
-			appList = que.fetch()
-			values['appList']=appList
+			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
 
-		if path == '/developcenter/appView.html':		####################################################################
-			logging.info('appView')
-			mode = self.request.get('mode')
-			if not mode:
-				mode = 'notice'
+		if path == '/developcenter/appView_notice.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.key).fetch()
 
-			if mode == 'notice':
-				aID = self.request.get('aID')
-				values['aInfo'] = ndb.Key(urlsafe=aID).get()
-				logging.info(values.get('aInfo'))
+		if path == '/developcenter/appView_user.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['userList']=DB_AppUser.query().order(-DB_AppUser.key).fetch()
 
 		if doRender(self,path,values):
 			return
@@ -120,10 +124,66 @@ class DevelopCenterHandler(SessionBaseHandler):
    		#doRender(self,'developcenter/index.html',values)
 	def post(self):
 		path = self.request.path
-		
+		aID = self.request.get('aID')
+		gdNamespace = namespace_manager.get_namespace()
+		appNamespace = 'APP_'+aID
+		values={}
+		aInfo = {}
+		if aID:
+			aInfo = DB_App.get_by_id(aID)
+			values['aInfo'] = aInfo
+			values['aID']=aID
 
-		if path == '/developcenter/createtoken.html':
-			values={}
+		user = users.get_current_user()
+		developer={}
+		
+		if user:
+			developer = DB_Developer.get_by_id(user.email())
+
+		if not developer:
+			self.response.write('check id')
+			return
+
+		
+		if path == '/developcenter/createapp.html':#########################################
+			namespace_manager.set_namespace(gdNamespace)
+			newApp = ndb.Key('DB_App',self.request.get('aID')).get()
+			if not newApp:
+				newApp = DB_App(id=self.request.get('aID'))
+			else:
+				self.response.write('check aID')
+				return
+			newApp.aID = self.request.get('aID')
+			newApp.title = self.request.get('title')
+			newApp.secretKey = self.request.get('secretKey')
+			#newApp.scoresSortType = self.request.get('scoresSortType')
+			newApp.scoresSortValue = int(self.request.get('scoresSortValue'))
+			newApp.developer = developer.key
+			try:
+				newApp.put()
+			except Exception, e:
+				self.response.write('error : change aID ')
+				return
+			
+			self.response.write('<a href=appmanager.html>appmanager</a>')
+		if path == '/developcenter/appView.html': #####################################
+			if not aInfo:
+				self.response.write('check aID')
+				return
+			namespace_manager.set_namespace(gdNamespace)
+			aInfo.title = self.request.get('title')
+			aInfo.secretKey = self.request.get('secretKey')
+			aInfo.scoresSortValue = int(self.request.get('scoresSortValue'))
+			aInfo.useCPI = bool(self.request.get('useCPI'))
+			aInfo.put()
+
+			values['aInfo'] = aInfo
+			doRender(self,path,values)
+
+				
+
+
+		if path == '/developcenter/appView_explorer.html': ######################################
 			values['enctoken'] = CommandHandler.encToken(self.request.get('auID'),
 													self.request.get('udid'),
 													self.request.get('flag'),
@@ -144,36 +204,17 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['decparam']= CommandHandler.decParam(values['encparam'])
 			doRender(self,path,values)
 
-		if path == '/developcenter/createapp.html':
-			user = users.get_current_user()
-			developer={}
-			if user:
-				developer = DB_Developer.get_by_id(user.email())
-
-			if not developer:
-				self.response.write('check id')
-				return
-
-			newApp = ndb.Key('DB_App',self.request.get('aID')).get()
-			if not newApp:
-				newApp = DB_App(id=self.request.get('aID'))
-			else:
-				self.response.write('check aID')
-				return
-			newApp.aID = self.request.get('aID')
-			newApp.title = self.request.get('title')
-			newApp.secretKey = self.request.get('secretKey')
-			#newApp.scoresSortType = self.request.get('scoresSortType')
-			newApp.scoresSortValue = int(self.request.get('scoresSortValue'))
-			newApp.developer = developer.key
-			try:
-				newApp.put()
-			except Exception, e:
-				self.response.write('error : change aID ')
-				return
-			
-
-			self.response.write('<a href=appmanager.html>appmanager</a>')
+		if path =='/developcenter/appView_notice.html':######################################
+			namespace_manager.set_namespace(appNamespace)
+			newNotice = DB_AppNotice()
+			newNotice.title=self.request.get('title')
+			newNotice.content=self.request.get('content')
+			newNotice.userData=self.request.get('userData')
+			newNotice.platform=self.request.get('platform')
+			newNotice.createTime = int(time.time())
+			newNotice.put()
+			values['msg']='save new data'
+			doRender(self,path,values)
 
 
 config = {}
