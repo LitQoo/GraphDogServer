@@ -26,6 +26,9 @@ class CommandHandler(SessionBaseHandler):
 	def post(self):
 
 		logging.info('########################### start command ###############################')
+
+		logging.info(self.request.headers.get('accept_language'))
+
 		path = self.request.path
 		action = self.request.get('action')
 		aID = self.request.get('aID')
@@ -59,12 +62,11 @@ class CommandHandler(SessionBaseHandler):
 		namespace_manager.set_namespace(appNamespace)
 
 		if self.session.get('auID'):
-			key =  ndb.Key(urlsafe=self.session.get('auID'))
-			auInfo = key.get()
+			#key =  ndb.Key(urlsafe=self.session.get('auID'))
+			#auInfo = key.get()
+			auInfo = DB_AppUser.get_by_id(int(self.session.get('auID')))
 			logging.info('nick : ' + str(self.session.get('auID')))
 
-
-		
 
 		#dec token
 		tokens = CommandHandler.decToken(token,aInfo.secretKey)
@@ -102,8 +104,9 @@ class CommandHandler(SessionBaseHandler):
 			if tokens.get('auID'):
 				try:
 					logging.info('finded by auID : '+tokens['auID'])
-					key =  ndb.Key(urlsafe=tokens['auID'])
-					auInfo = key.get()
+					auInfo = DB_AppUser.get_by_id(tokens['auID'])
+					#key =  ndb.Key(urlsafe=tokens['auID'])
+					#auInfo = key.get()
 				except Exception, e:
 					pass
 			
@@ -112,7 +115,7 @@ class CommandHandler(SessionBaseHandler):
 			if auInfo:	#and auInfo.udid == tokens.get('udid')
 				logging.info("user finded")
 				# name , flag 확인해서 업데이트하기
-				if auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
+				if tokens.get('nick') and tokens.get('flag') and auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
 					
 					namespace_manager.set_namespace(gdNamespace)
@@ -183,16 +186,38 @@ class CommandHandler(SessionBaseHandler):
 					uInfo.put()
 
 					result['isFirst']=True
+					
+
 					#cpiEvents체크
+					if len(uInfo.CPIEvents)>0:
+						logging.info('check cpievent')
+						i=0
+						for cpi in uInfo.CPIEvents:
+							if aID == cpi.get('eventAppID'):
+								logging.info('find cpi Event')
+								namespace_manager.set_namespace('APP_'+cpi.get('fromAppID'))
+								newRequest = DB_AppRequest()
+								newRequest.receiver = ndb.Key('DB_AppUser',int(cpi.get('fromAppUserID')))
+								newRequest.sender = aInfo.key
+								newRequest.category = 'cpiEvent'
+								newRequest.content = 'complete cpiEvent'
+								newRequest.put()
+
+								del uInfo.CPIEvents[i]
+								uInfo.put()
+
+								result['cpiEvent']=True
+							i=i+1
+
 
 			#결과리턴~
 			result['tokenUpdate']='ok';
 			result['state']='ok';
 			result['nick']=tokens.get('nick')
 			result['flag']=tokens.get('flag')
-			result['auid']=auInfo.key.urlsafe()
+			result['auid']=auInfo.key.id()
 			self.session['aID']=aID
-			self.session['auID']=auInfo.key.urlsafe()
+			self.session['auID']=auInfo.key.id()
 			
 			#nextaction
 			if param.get('nextAction'):
@@ -206,10 +231,12 @@ class CommandHandler(SessionBaseHandler):
 		#action startscores
 		if action == 'getflagranks':#점수시작~ ##########################################################################
 			namespace_manager.set_namespace(appNamespace)
+			scoresSortValue = aInfo.scoresSortValue
 			startTime = int(cTime)/scoresSortValue*scoresSortValue
 			result['leftTime'] = int(cTime)-startTime
 			logging.info('startscores')
-			_list = DB_AppScore.query(DB_AppScore.sTime==startTime).fetch()
+			#DB_AppScore.sTime==startTime
+			_list = DB_AppScore.query().fetch()
 			alluser=0;
 			flags={}
 			for _as in _list:
@@ -260,7 +287,7 @@ class CommandHandler(SessionBaseHandler):
 
 			self.session['asSortTime'] = startTime
 			self.session['asSortPrevTime'] = startTime-aInfo.scoresSortValue
-			self.session['asID']=asInfo.key.urlsafe()
+			self.session['asID']=asInfo.key.id()
 			self.session['gType']=str(gType)
 
 			result['state']='ok'
@@ -269,7 +296,7 @@ class CommandHandler(SessionBaseHandler):
 		if action == 'getscores': ##########################################################################
 			
 			namespace_manager.set_namespace(appNamespace)
-			asInfo = ndb.Key(urlsafe=self.session.get('asID')).get()
+			asInfo =  ndb.Key('DB_AppScore',id=int(self.session.get('asID'))).get()
 			asSortTime = self.session.get('asSortTime')
 			asSortTimeList = [self.session.get('asSortTime'),self.session.get('asSortPrevTime')]
 			if not asInfo:
@@ -368,7 +395,9 @@ class CommandHandler(SessionBaseHandler):
 			namespace_manager.set_namespace(gdNamespace)
 			cpiappid = param.get('aID')
 			user = auInfo.uInfo.get()
-			user.cpiEvents.append(cpiappid)
+			logging.info(user.CPIEvents)
+			newCpiEvent={'eventAppID':cpiappid,'fromAppID':aID,'fromAppUserID':auInfo.key.id()}
+			user.CPIEvents.append(newCpiEvent)
 			user.put()
 			result['state']='ok'
 
@@ -402,14 +431,16 @@ class CommandHandler(SessionBaseHandler):
 			logging.info('skey2:'+skey+'  len:'+str(len(skey)))
 			token=token.replace(" ","+")
 			to = base64.decodestring(token)
+			
 			if len(token)%8>0:
 				token = token + ' '*(8-len(token)%8)			
 
 			if len(skey)%8>0:
 				skey = skey + ' '*(8-len(skey)%8)
+
 			obj = DES.new(skey,DES.MODE_ECB)
 			to=obj.decrypt(to)
-			to=to.split('||')
+			logging.info(to)
 			re['auID']=to[0]
 			re['udid']=to[1]
 			re['flag']=to[2]
@@ -417,7 +448,6 @@ class CommandHandler(SessionBaseHandler):
 			re['email']=to[4]
 			re['platform']=to[5]
 			re['createTime']=to[6]
-
 		except Exception, e:
 		 	return re
 		return re

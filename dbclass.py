@@ -35,7 +35,7 @@ class DB_User(ndb.Model):
 	flag = ndb.StringProperty()
 	udid = ndb.StringProperty()
 	installs = ndb.StringProperty(repeated=True)
-	cpiEvents = ndb.StringProperty(repeated=True)
+	CPIEvents = ndb.PickleProperty(default = [])
 
 class DB_AppUser(ndb.Model):
 	nick = ndb.StringProperty()
@@ -65,7 +65,12 @@ class DB_AppNotice(ndb.Model):
 	platform = ndb.StringProperty()
 	createTime = ndb.IntegerProperty()
 
-
+class DB_AppRequest(ndb.Model):
+	receiver = ndb.KeyProperty()
+	sender = ndb.KeyProperty()
+	category = ndb.StringProperty()
+	content = ndb.StringProperty()
+	userData = ndb.JsonProperty()
 
 class DB_AppData(ndb.Model):
 	pass
