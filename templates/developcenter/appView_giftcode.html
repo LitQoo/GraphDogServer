@@ -1,0 +1,44 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+create giftcode
+<form action=appView_giftcode.html method=post>
+	<input type=hidden name=aID value={{aID|safe}}>
+			category:<input type=text name=category value={{giftcode.category|safe}}><br>
+			value:<input type=text name=value value={{giftcode.value|safe}}><br>
+			count : <input type=text name=count value=1> <br>
+			<input type=submit value='save'>
+</form>
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+		<table width=100% border=1>
+			<tr>
+				<td>code</td>
+				<td>category</td>
+				<td>value</td>
+				<td>createTime</td>
+				<td>user</td>
+				<td>useTime</td>
+			</tr>
+		{% for row in giftcodeList %}
+			<tr>
+				<td>{{row.code}}</td>
+				<td>{{row.category}}</td>
+				<td>{{row.value}}</td>
+				<td>
+					{{row.createTime}}
+				</td>
+				<td>
+					{{row.user}}
+				</td>
+				<td>
+					{{row.useTime}}
+				</td>
+			</tr>
+		{%endfor%}
+	</table>
+	{% endif %}
+{% endblock %}

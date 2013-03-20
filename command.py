@@ -30,7 +30,7 @@ class CommandHandler(SessionBaseHandler):
 		logging.info(self.request.headers.get('accept_language'))
 
 		path = self.request.path
-		action = self.request.get('action')
+		action = self.request.get('action').lower()
 		aID = self.request.get('aID')
 		token = self.request.get('token')
 		param = CommandHandler.decParam(self.request.get('param'))
@@ -40,14 +40,20 @@ class CommandHandler(SessionBaseHandler):
 		appNamespace = 'APP_'+aID
 			
 		if action == 'logout':
+			namespace_manager.set_namespace(appNamespace)
 			self.session['auID']=''
 			self.session['aID']=''
 			self.printError('logout',100)
+
+			logging.info('session auid:'+self.session.get('auID'))
+			logging.info('session aid:'+self.session.get('aID'))
 			return
 
 		if not param:
 			param={}
 
+
+		namespace_manager.set_namespace(gdNamespace)
 		#find app
 		try:
 			aInfo = DB_App.get_by_id(aID)
@@ -55,12 +61,14 @@ class CommandHandler(SessionBaseHandler):
 			self.printError('dont find app' + aID,100)
 			return
 
+		if not aInfo:
+			self.printError('dont find app' + aID,100)
+			return
 		#create dbclass
 		#DB_AppUser =  _DB_AppUser.createClass(aID)
 		#DB_AppScore = _DB_AppScore.createClass(aID)
 
 		namespace_manager.set_namespace(appNamespace)
-
 		if self.session.get('auID'):
 			#key =  ndb.Key(urlsafe=self.session.get('auID'))
 			#auInfo = key.get()
@@ -97,9 +105,11 @@ class CommandHandler(SessionBaseHandler):
 			result['week']=int(datetime.date.today().strftime("%U"))
 			result['lefttime']=int(2400)
 			
-
+		#logging.info('aID in session : '+self.session.get('aID'))
 		# start action
-		if action == 'start':	#로그인하기 ##########################################################################
+		if not self.session.get('aID') or self.session.get('aID')!=aID:	#로그인하기 ##########################################################################
+			logging.info('start authorise')
+
 			#auID있으면 au정보 뽑아오기~
 			if tokens.get('auID'):
 				try:
@@ -125,9 +135,9 @@ class CommandHandler(SessionBaseHandler):
 					uInfo.put()
 
 				#createTime update
-					namespace_manager.set_namespace(appNamespace)
-					auInfo.createTime=str(cTime)
-					auInfo.put()
+				namespace_manager.set_namespace(appNamespace)
+				auInfo.createTime=str(cTime)
+				auInfo.put()
 
 				#weekly점수 검사후 초기화!##############################
 				
@@ -216,9 +226,14 @@ class CommandHandler(SessionBaseHandler):
 			result['nick']=tokens.get('nick')
 			result['flag']=tokens.get('flag')
 			result['auid']=auInfo.key.id()
+			
+			namespace_manager.set_namespace(appNamespace)
 			self.session['aID']=aID
 			self.session['auID']=auInfo.key.id()
-			
+			logging.info('session update!! :'+aID+":"+str(auInfo.key.id()))
+			logging.info('session auid:'+str(self.session.get('auID')))
+			logging.info('session aid:'+str(self.session.get('aID')))
+
 			#nextaction
 			if param.get('nextAction'):
 				action = param.get('nextAction')
@@ -227,6 +242,7 @@ class CommandHandler(SessionBaseHandler):
 		#login 검사
 		if not self.session.get('aID') or not self.session.get('auID'):
 			self.printError('error',100)
+			return
 
 		#action startscores
 		if action == 'getflagranks':#점수시작~ ##########################################################################
@@ -296,7 +312,8 @@ class CommandHandler(SessionBaseHandler):
 		if action == 'getscores': ##########################################################################
 			
 			namespace_manager.set_namespace(appNamespace)
-			asInfo =  ndb.Key('DB_AppScore',id=int(self.session.get('asID'))).get()
+			logging.info(self.session.get('asID'))
+			asInfo =  ndb.Key('DB_AppScore',int(self.session.get('asID'))).get()
 			asSortTime = self.session.get('asSortTime')
 			asSortTimeList = [self.session.get('asSortTime'),self.session.get('asSortPrevTime')]
 			if not asInfo:
@@ -353,7 +370,7 @@ class CommandHandler(SessionBaseHandler):
 					result['list'].append(_new)
 					rank=rank+1
 
-		if action == 'getnotices':
+		if action == 'getnotices': #######################################################################################
 			namespace_manager.set_namespace(appNamespace)
 			# param - lastNoticeID, 
 			#          limit = true, false
@@ -374,9 +391,9 @@ class CommandHandler(SessionBaseHandler):
 				noticedict['createTime']=notice.createTime
 				result['noticeList'].append(noticedict)
 
-		if action == 'getcpilist':
+		if action == 'getcpilist': #######################################################################################
 			namespace_manager.set_namespace(gdNamespace)
-			cpiList = DB_App.query(DB_App.useCPI == True).fetch(10)
+			cpiList = DB_App.query(ndb.AND(DB_App.useCPI== True,DB_App.group==aInfo.group)).fetch(10)
 			result['cpiList']=[]
 			for cpi in cpiList:
 				if cpi.key.id() == aID:
@@ -391,7 +408,7 @@ class CommandHandler(SessionBaseHandler):
 
 			result['state']='ok'
 			
-		if action == 'addcpievent':
+		if action == 'addcpievent': #######################################################################################
 			namespace_manager.set_namespace(gdNamespace)
 			cpiappid = param.get('aID')
 			user = auInfo.uInfo.get()
@@ -399,6 +416,44 @@ class CommandHandler(SessionBaseHandler):
 			newCpiEvent={'eventAppID':cpiappid,'fromAppID':aID,'fromAppUserID':auInfo.key.id()}
 			user.CPIEvents.append(newCpiEvent)
 			user.put()
+			result['state']='ok'
+
+		if action == 'usegiftcode':#######################################################################################
+			namespace_manager.set_namespace(appNamespace)
+			giftcode = DB_AppGiftcode.get_by_id(param.get('giftcode'))
+			if not giftcode:
+				self.printError("don't find giftcode",880)
+				return
+
+			if giftcode.user:
+				self.printError("this giftcode was used",890)
+				return
+
+			if self.session.get('giftcodeTime'):
+				gifttime = cTime-int(self.session.get('giftcodeTime'));
+
+				if gifttime < 3600:
+					self.printError("you don't use giftcode for 1H",870)
+					return
+
+			result['state']='ok'
+			result['category']=giftcode.category
+			result['value']=giftcode.value
+			giftcode.useTime = int(time.time())
+			giftcode.user = auInfo.key
+			giftcode.put()
+			self.session['giftcodeTime']=int(time.time())
+
+		if action == 'addmail':#######################################################################################
+			namespace_manager.set_namespace(appNamespace)
+			auInfo.mail = param.get('mail')
+			auInfo.put()
+
+			namespace_manager.set_namespace(gdNamespace)
+			uInfo =  auInfo.uInfo.get()
+			uInfo.mail = param.get('mail')
+			uInfo.put()
+
 			result['state']='ok'
 
 		#결과리턴
@@ -428,10 +483,8 @@ class CommandHandler(SessionBaseHandler):
 	def decToken(cls,token,skey):
 		re={}
 		try:
-			logging.info('skey2:'+skey+'  len:'+str(len(skey)))
 			token=token.replace(" ","+")
 			to = base64.decodestring(token)
-			
 			if len(token)%8>0:
 				token = token + ' '*(8-len(token)%8)			
 
@@ -440,7 +493,7 @@ class CommandHandler(SessionBaseHandler):
 
 			obj = DES.new(skey,DES.MODE_ECB)
 			to=obj.decrypt(to)
-			logging.info(to)
+			to=to.split("||")
 			re['auID']=to[0]
 			re['udid']=to[1]
 			re['flag']=to[2]

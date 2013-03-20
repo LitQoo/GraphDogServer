@@ -15,6 +15,10 @@
 		<td>aID</td>
 		<td><input name=aID value="{{ aInfo.aID|safe }}" readonly> (a~Z a~z 0~9)</td>
 	</tr>
+		<tr>
+		<td>group</td>
+		<td><input name=group value="{{ aInfo.group|safe }}"></td>
+	</tr>
 	<tr>
 		<td>secretKey</td>
 		<td><input name=secretKey value="{{ aInfo.secretKey|safe }}"></td>
@@ -48,11 +52,13 @@
 		<table border=1><tr><td>
 			<a href=appView_notice.html?aID={{aID}}>notice</a>
 
-		</td><td>
-			<a href=appView_explorer.html?aID={{aID}}>explorer</a></td>
+		</td>
+
+			<td><a href=appView_explorer.html?aID={{aID}}>explorer</a></td>
 
 			<td><a href=appView_user.html?aID={{aID}}>user</a></td>
 
+			<td><a href=appView_giftcode.html?aID={{aID}}>giftcode</a></td>
 
 			<td></td></tr></table>
 	</td></tr>

@@ -33,6 +33,7 @@ import base64
 import sys
 import logging
 import random
+import string
 from dbclass import *
 from SessionBaseHandler import *
 from command import CommandHandler
@@ -62,7 +63,6 @@ def doRender(handler,tname='index.html',values={}):
 class MainHandler(SessionBaseHandler):
     def get(self):
     	path = self.request.path
-
     	if doRender(self,path):
     		return
 
@@ -70,13 +70,17 @@ class MainHandler(SessionBaseHandler):
 
 
 class DevelopCenterHandler(SessionBaseHandler):
+	@classmethod
+	def createGiftcode(size=10, chars=string.ascii_uppercase + string.digits):
+		return ''.join(random.choice(chars) for x in range(10))
+
 	def get(self):
 		path = self.request.path
 		values = {}
 		user = users.get_current_user()
 		developer={}
-
-
+		logging.info('get start')
+		
 		if user:
 			developer=ndb.Key('DB_Developer',user.email()).get()
 		
@@ -118,6 +122,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 			namespace_manager.set_namespace(appNamespace)
 			values['userList']=DB_AppUser.query().order(-DB_AppUser.key).fetch()
 
+		if path == '/developcenter/appView_giftcode.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['giftcodeList']=DB_AppGiftcode.query().order(-DB_AppGiftcode.createTime).fetch()
+
 		if doRender(self,path,values):
 			return
 
@@ -129,6 +137,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 		appNamespace = 'APP_'+aID
 		values={}
 		aInfo = {}
+		logging.info('post start')
 		if aID:
 			aInfo = DB_App.get_by_id(aID)
 			values['aInfo'] = aInfo
@@ -172,6 +181,8 @@ class DevelopCenterHandler(SessionBaseHandler):
 				return
 			namespace_manager.set_namespace(gdNamespace)
 			aInfo.title = self.request.get('title')
+			logging.info('ok'+self.request.get('group'))
+			aInfo.group = self.request.get('group')
 			aInfo.secretKey = self.request.get('secretKey')
 			aInfo.scoresSortValue = int(self.request.get('scoresSortValue'))
 			aInfo.useCPI = bool(self.request.get('useCPI'))
@@ -216,6 +227,25 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['msg']='save new data'
 			doRender(self,path,values)
 
+		if path =='/developcenter/appView_giftcode.html':######################################
+			namespace_manager.set_namespace(appNamespace)
+			count = int(self.request.get('count'))
+
+			while count is not 0 :
+				codelist = ''
+				code = DevelopCenterHandler.createGiftcode()
+				newNotice = DB_AppGiftcode.get_or_insert(code)
+				if not newNotice.value:
+					newNotice.category=self.request.get('category')
+					newNotice.value=int(self.request.get('value'))
+					newNotice.code=code
+					newNotice.createTime =int(time.time())
+					newNotice.put()
+					codelist = codelist + code + ' <br>' 
+					count-=1
+			
+			values['msg']= "created giftcode category:"+self.request.get('category')+"<br> value:"+self.request.get('value')+"<br>"+ codelist
+			doRender(self,path,values)
 
 config = {}
 config['webapp2_extras.sessions'] = {

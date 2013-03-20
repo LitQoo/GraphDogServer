@@ -19,6 +19,7 @@ class DB_DeveloperGroup(ndb.Model):
 
 class DB_App(ndb.Model):
 	aID = ndb.StringProperty()
+	group = ndb.StringProperty()
 	title = ndb.StringProperty()
 	secretKey = ndb.StringProperty()
 	#scoresSortType = ndb.StringProperty()
@@ -35,11 +36,13 @@ class DB_User(ndb.Model):
 	flag = ndb.StringProperty()
 	udid = ndb.StringProperty()
 	installs = ndb.StringProperty(repeated=True)
+	mail = ndb.StringProperty()
 	CPIEvents = ndb.PickleProperty(default = [])
 
 class DB_AppUser(ndb.Model):
 	nick = ndb.StringProperty()
 	flag = ndb.StringProperty()
+	mail = ndb.StringProperty()
 	uInfo  = ndb.KeyProperty(DB_User)
 	createTime = ndb.StringProperty()
 	udid = ndb.StringProperty()
@@ -71,6 +74,15 @@ class DB_AppRequest(ndb.Model):
 	category = ndb.StringProperty()
 	content = ndb.StringProperty()
 	userData = ndb.JsonProperty()
+
+class DB_AppGiftcode(ndb.Model):
+	code = ndb.StringProperty()
+	category = ndb.StringProperty()
+	value = ndb.IntegerProperty()
+	user = ndb.KeyProperty()
+	createTime = ndb.IntegerProperty()
+	useTime = ndb.IntegerProperty()
+
 
 class DB_AppData(ndb.Model):
 	pass
