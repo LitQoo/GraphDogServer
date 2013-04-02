@@ -71,7 +71,6 @@ class CommandHandler(SessionBaseHandler):
 			aInfo = DB_App.get_by_id(aID)
 		except Exception, e:
 			self.printError("dont find app1",100)
-			
 			return
 
 		if not aInfo:
