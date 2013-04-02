@@ -40,7 +40,9 @@ class CommandHandler(SessionBaseHandler):
 		path = self.request.path
 		action = self.request.get('action').lower()
 		aID = self.request.get('aID')
+		logging.info('self.request')
 		logging.info(self.request)
+		logging.info('self.request.POST')
 		logging.info(self.request.POST)
 		token = self.request.get('token')
 		version = self.request.get('version')
@@ -49,6 +51,7 @@ class CommandHandler(SessionBaseHandler):
 		aInfo={}
 		gdNamespace = namespace_manager.get_namespace()
 		appNamespace = 'APP_'+aID
+		logging.info('param')
 		logging.info(param)
 
 		namespace_manager.set_namespace(appNamespace)
@@ -79,7 +82,8 @@ class CommandHandler(SessionBaseHandler):
 		
 		#dec token
 		tokens = CommandHandler.decToken(token,aInfo.secretKey)
-		logging.info('tokens : ' + str(tokens))
+		logging.info('tokens')
+		logging.info(tokens)
 
 		cTime = int(time.time())
 				#기본리턴값
@@ -655,13 +659,11 @@ class CommandHandler(SessionBaseHandler):
 		#		result[key] = value.encode('utf-8')
 			 
 		#result = convert(result)
-		resultStr = json.dumps(result)
-		logging.info(resultStr.decode('utf-8'))
-		logging.info(resultStr.decode('utf-8').encode('utf-8'))
-		logging.info(str(type(resultStr)))
-		
+		logging.info(result)
+		resultStr = json.dumps(result,encoding="utf-8",ensure_ascii=False)
+		#logging.info(resultStr)
+		#resultStr = resultStr.encode('utf-8')
 		self.response.write(resultStr)
-		logging.info(str(type(resultStr)))
 		logging.info(resultStr)
 		logging.info('########################### end command ###############################')
 	
@@ -706,6 +708,7 @@ class CommandHandler(SessionBaseHandler):
 
 			obj = DES.new(skey,DES.MODE_ECB)
 			to=obj.decrypt(to)
+			#to=to.decode('utf-8')
 			to=to.split("||")
 			
 			if to[0]:
