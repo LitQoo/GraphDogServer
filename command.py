@@ -21,6 +21,15 @@ import logging
 import random
 from dbclass import *
 from SessionBaseHandler import *
+def convert(input):
+	if isinstance(input, dict):
+	    return {convert(key): convert(value) for key, value in input.iteritems()}
+	elif isinstance(input, list):
+	    return [convert(element) for element in input]
+	elif isinstance(input, unicode):
+	    return input.encode('utf-8')
+	else:
+	    return input
 
 class CommandHandler(SessionBaseHandler):
 	def post(self):
@@ -672,7 +681,7 @@ class CommandHandler(SessionBaseHandler):
 		#		logging.info('test')
 		#		result[key] = value.encode('utf-8')
 			 
-
+		result = convert(result)
 		resultStr = json.dumps(result)
 		logging.info(resultStr.decode('utf-8'))
 		logging.info(resultStr.decode('utf-8').encode('utf-8'))
@@ -682,7 +691,9 @@ class CommandHandler(SessionBaseHandler):
 		logging.info(str(type(resultStr)))
 		logging.info(resultStr)
 		logging.info('########################### end command ###############################')
-		
+	
+
+
 	def get(self):
 		self.post()		
 
