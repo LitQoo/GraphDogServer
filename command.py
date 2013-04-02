@@ -70,29 +70,7 @@ class CommandHandler(SessionBaseHandler):
 		try:
 			aInfo = DB_App.get_by_id(aID)
 		except Exception, e:
-			tstring = "리트쿠우"
-			logging.info(tstring)
-
-			tstring = u"리트쿠우"
-			logging.info(tstring)
-
-
-			tstring = tstring.encode('utf-8')
-			logging.info(tstring)
-
-
-			#tstring = tstring.encode('cp949')
-			#logging.info(tstring)
-
-			self.printError('dont find app1 리트쿠우' + aID,100)
-			
-			tstr = u'dont find app1 리트쿠우'
-			tstr = tstr.encode('utf-8')
-			self.printError( tstr,100)
-			
-			tstr = u'dont find app1 리트쿠우'
-			#tstr = tstr.encode('utf-8')
-			self.printError(tstr,100)
+			self.printError("dont find app1",100)
 			
 			return
 
@@ -449,7 +427,6 @@ class CommandHandler(SessionBaseHandler):
 					_new['etime']=_new['eTime']
 					_new['stime']=_new['uTime']
 					_new['type']=_new['gType']
-					_new['nick']=_new['nick'].encode('utf-8')
 					_new['asid']=sinfo.key.id()
 					del _new['isOver']
 					del _new['auInfo']
@@ -477,7 +454,6 @@ class CommandHandler(SessionBaseHandler):
 					_new['etime']=_new['eTime']
 					_new['stime']=_new['uTime']
 					_new['type']=_new['gType']
-					_new['nick']=_new['nick'].encode('utf-8')
 					del _new['isOver']
 					del _new['auInfo']
 					del _new['eTime']
@@ -501,7 +477,6 @@ class CommandHandler(SessionBaseHandler):
 					_new['etime']=_new['eTime']
 					_new['stime']=_new['uTime']
 					_new['type']=_new['gType']
-					_new['nick']=_new['nick'].encode('utf-8')
 					del _new['isOver']
 					del _new['auInfo']
 					del _new['eTime']
@@ -525,7 +500,6 @@ class CommandHandler(SessionBaseHandler):
 				_new['etime']=_new['eTime']
 				_new['stime']=_new['uTime']
 				_new['type']=_new['gType']
-				_new['nick']=_new['nick'].encode('utf-8')
 				_new['isme']=True
 				del _new['isOver']
 				del _new['auInfo']
@@ -681,7 +655,7 @@ class CommandHandler(SessionBaseHandler):
 		#		logging.info('test')
 		#		result[key] = value.encode('utf-8')
 			 
-		result = convert(result)
+		#result = convert(result)
 		resultStr = json.dumps(result)
 		logging.info(resultStr.decode('utf-8'))
 		logging.info(resultStr.decode('utf-8').encode('utf-8'))
@@ -702,6 +676,9 @@ class CommandHandler(SessionBaseHandler):
 		re={}
 		try:
 			re = base64.decodestring(param)
+			#re = re.decode('utf-8')
+			#logging.info('decParam type')
+			#logging.info(str(type(to)))
 			re = json.loads(re) #json.dumps
 		except Exception, e:
 			return re
@@ -710,6 +687,7 @@ class CommandHandler(SessionBaseHandler):
 	@classmethod
 	def encParam(cls,paramstr):
 		re = base64.encodestring(paramstr)
+		re = re.decode('utf-8')
 		return re
 
 	@classmethod
@@ -718,6 +696,9 @@ class CommandHandler(SessionBaseHandler):
 		try:
 			token=token.replace(" ","+")
 			to = base64.decodestring(token)
+			#to = to.decode('uft-8')
+			#logging.info('decToken type')
+			#logging.info(str(type(to)))
 			if len(token)%8>0:
 				token = token + ' '*(8-len(token)%8)			
 
