@@ -1,0 +1,94 @@
+<html>
+	<head>
+		<title>Developer Center</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script>
+		$(document).ready(function() {
+
+			var MaxInputs       = 8; //maximum input boxes allowed
+			var InputsWrapper   = $("#InputsWrapper"); //Input boxes wrapper ID
+			var AddButton       = $("#AddMoreFileBox"); //Add button ID
+			var closeButton     = $("#closeEditor"); //Add button ID
+
+			var x = 1; //initlal text box count
+			var FieldCount=1; //to keep track of text box added
+
+			var jsonStr = $(opener.document).find("#{{ input }}").val();
+			var values = {}
+
+			if(jsonStr!=""){
+				values=JSON.parse(jsonStr);
+				i=0
+				for(key in values){
+					i++;
+					$(InputsWrapper).append('<div><input type="text" name="key[]" id="key_'+i+'" value="'+key+'"/>\n'+
+			            	'<input type="text" name="value[]" id="value_'+i+'" value="'+values[key]+'"/>\n'+
+			            	'<a href="#" class="removeclass">x</a></div>');
+					FieldCount++;
+					x++;
+				}
+			}else{
+				$(InputsWrapper).append('<div><input type="text" name="key[]" id="key_1" value="{{keyname}}"/>\n'+
+		            	'<input type="text" name="value[]" id="value_1" value="{{valuename}}"/>\n'+
+		            	'<a href="#" class="removeclass">x</a></div>');
+			}
+
+		
+			$(AddButton).click(function (e)  //on add input button click
+			{
+		        if(x <= MaxInputs) //max input box allowed
+		        {
+		            FieldCount++; //text box added increment
+		            //add input box
+		            $(InputsWrapper).append('<div><input type="text" name="key[]" id="key_'+ FieldCount +'" value="{{keyname}}"/>\n'+
+		            	'<input type="text" name="value[]" id="value_'+ FieldCount +'" value="{{valuename}}"/>\n'+
+		            	'<a href="#" class="removeclass">x</a></div>');
+		            x++; //text box increment
+		        }
+			return false;
+			});
+
+			$("body").on("click",".removeclass", function(e){ //user click on remove text
+		        if( x > 1 ) {
+		                $(this).parent('div').remove(); //remove text box
+		                x--; //decrement textbox
+		        }
+				return false;
+			}) 
+
+
+			$(closeButton).click(function (e)  //on add input button click
+			{	
+
+				//var array= new Array();
+				var dict= {};
+				for(i=1;i<=FieldCount;i++){
+					if(typeof $("#key_"+i).val()=="undefined")continue;
+					key = $("#key_"+i).val();
+					dict[key]=$("#value_"+i).val();
+				}
+				
+				// obj to string JSON.stringify(myObj);
+				//string to obj  JSON.parse(string);
+		        $(opener.document).find("#{{ input }}").val(JSON.stringify(dict));
+		        window.close();
+
+			return false;
+			});
+
+		});
+
+
+		</script>
+	</head>
+	<body>
+
+			<div id="InputsWrapper">
+
+			</div>
+			<span class="small"><a href="#" id="AddMoreFileBox" class="btn btn-info">Add {{keyname}}</a></span>
+			
+<br><br>
+			<span class="small"><a href="#" id="closeEditor" class="btn btn-info">Apply</a></span>
+	</body>
+</html>

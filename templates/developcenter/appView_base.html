@@ -1,5 +1,7 @@
+
 {% extends '_base.html' %}
 {% block bodycontent %}
+
 <table border=1>
 	<tr><td>
 <table align=center border=1>
@@ -32,9 +34,20 @@
 		<td>useCPI</td>
 		<td><input type=checkbox value=true name=useCPI {% if aInfo.useCPI %} checked {% endif %}>
 			<br>
-			banner <input name=bannerImg  value="{{ aInfo.bannerImg|safe }}"> (320x50)<br>
-			icon <input name=iconImg  value="{{ aInfo.iconImg|safe }}"> (50x50)<br>
-			store <input name=store  value="{{ aInfo.store|safe }}">
+			banner <input name=bannerImg id='bannerImg'  value="{%if aInfo.bannerImg %}{{ aInfo.bannerImg|safe }}{%endif%}"> (320x50)
+			<a href=# onclick="window.open('/developcenter/imageselector/?input=bannerImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
+
+			<br><br>
+			icon <input name=iconImg  id='iconImg' value="{%if aInfo.iconImg %}{{ aInfo.iconImg|safe }}{%endif%}"> (50x50)
+			<a href=# onclick="window.open('/developcenter/imageselector/?input=iconImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
+			<br><br>
+			store infomation<br>
+			<textarea cols=30 rows=5 name='store' id='store'>{%if aInfo.store %}{{ aInfo.store|safe }}{%endif%}</textarea><br>
+			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=store&keyname=platform&valuename=storeid','jsoneditor','width=500 height=500 menubar=no status=no')">edit store infomation</a>
+			<br><br>
+			descript<br>
+			<textarea cols=30 rows=5 name='descript' id='descript'>{%if aInfo.descript %}{{ aInfo.descript|safe }}{%endif%}</textarea><br>
+			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=descript&keyname=language&valuename=descript','jsoneditor','width=500 height=500 menubar=no status=no')">edit descript infomation</a>
 		</td>
 	</tr>
 

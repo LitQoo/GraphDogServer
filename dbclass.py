@@ -29,6 +29,7 @@ class DB_App(ndb.Model):
 	bannerImg = ndb.StringProperty()
 	iconImg=ndb.StringProperty()
 	store = ndb.JsonProperty()
+	descript = ndb.JsonProperty()
 
 
 class DB_User(ndb.Model):
@@ -46,7 +47,7 @@ class DB_AppUser(ndb.Model):
 	uInfo  = ndb.KeyProperty(DB_User)
 	createTime = ndb.StringProperty()
 	udid = ndb.StringProperty()
-	userData = ndb.JsonProperty()
+	userdata = ndb.JsonProperty()
 	joinDate = ndb.DateProperty(auto_now=True)
 
 class DB_AppScore(ndb.Model):
@@ -54,17 +55,17 @@ class DB_AppScore(ndb.Model):
 	nick=ndb.StringProperty()
 	flag=ndb.StringProperty()
 	sTime=ndb.IntegerProperty()
-	uTime=ndb.IntegerProperty()
+	uTime=ndb.IntegerProperty() 
 	eTime=ndb.IntegerProperty() 
 	gType=ndb.StringProperty()
 	score=ndb.IntegerProperty()
 	isOver=ndb.BooleanProperty()
-	userData = ndb.JsonProperty()
+	userdata = ndb.JsonProperty()
 
 class DB_AppNotice(ndb.Model):
 	title=ndb.StringProperty()
 	content = ndb.TextProperty()
-	userData = ndb.JsonProperty()
+	userdata = ndb.JsonProperty()
 	platform = ndb.StringProperty()
 	createTime = ndb.IntegerProperty()
 
@@ -73,7 +74,7 @@ class DB_AppRequest(ndb.Model):
 	sender = ndb.KeyProperty()
 	category = ndb.StringProperty()
 	content = ndb.StringProperty()
-	userData = ndb.JsonProperty()
+	userdata = ndb.JsonProperty()
 
 class DB_AppGiftcode(ndb.Model):
 	code = ndb.StringProperty()
@@ -83,7 +84,11 @@ class DB_AppGiftcode(ndb.Model):
 	createTime = ndb.IntegerProperty()
 	useTime = ndb.IntegerProperty()
 
-
+class DB_AppImage(ndb.Model):
+	imageName = ndb.StringProperty()
+	developer = ndb.UserProperty()
+	imgurl=""
+	
 class DB_AppData(ndb.Model):
 	pass
 

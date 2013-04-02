@@ -18,7 +18,9 @@
 import os
 import webapp2
 from google.appengine.ext import webapp
+from google.appengine.api import images
 from google.appengine.ext.webapp import template
+import urllib
 #from google.appengine.api import rdbms
 #from google.appengine.ext import db
 from google.appengine.ext import ndb
@@ -37,6 +39,10 @@ import string
 from dbclass import *
 from SessionBaseHandler import *
 from command import CommandHandler
+
+from google.appengine.ext import blobstore
+from google.appengine.ext.webapp import blobstore_handlers
+
 #render function
 def doRender(handler,tname='index.html',values={}):
 	temp = os.path.join(
@@ -71,7 +77,7 @@ class MainHandler(SessionBaseHandler):
 
 class DevelopCenterHandler(SessionBaseHandler):
 	@classmethod
-	def createGiftcode(size=10, chars=string.ascii_uppercase + string.digits):
+	def createGiftcode(size=10, chars=string.ascii_uppercase):
 		return ''.join(random.choice(chars) for x in range(10))
 
 	def get(self):
@@ -99,18 +105,30 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/index.html' or path == '/developcenter' or  path == '/developcenter/':
 			doRender(self,'/developcenter/index.html',values)
+			return
+			
+		if path == '/developcenter/reference.html':	####################################################################
+			doRender(self,'/developcenter/reference.html',values)
+			return
 
+		if path == '/developcenter/jsoneditor.html':	####################################################################
+			values['input']=self.request.get('input')
+			values['valuename']=self.request.get('valuename')
+			values['keyname']=self.request.get('keyname')
+			doRender(self,'/developcenter/jsoneditor.html',values)
+			return
+		
 		if not developer:
 			return
 
 		aID = self.request.get('aID')
-
+		values['user']=user
 		if aID:
 			gdNamespace = namespace_manager.get_namespace()
 			appNamespace = 'APP_'+aID
 			values['aInfo'] = DB_App.get_by_id(aID)
 			values['aID']=aID;
-		
+
 		if path == '/developcenter/appmanager.html':	####################################################################
 			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
 
@@ -186,6 +204,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 			aInfo.secretKey = self.request.get('secretKey')
 			aInfo.scoresSortValue = int(self.request.get('scoresSortValue'))
 			aInfo.useCPI = bool(self.request.get('useCPI'))
+			aInfo.bannerImg = self.request.get('bannerImg')
+			aInfo.iconImg = self.request.get('iconImg')
+			aInfo.store = self.request.get('store')
+			aInfo.descript = self.request.get('descript')
 			aInfo.put()
 
 			values['aInfo'] = aInfo
@@ -198,6 +220,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['enctoken'] = CommandHandler.encToken(self.request.get('auID'),
 													self.request.get('udid'),
 													self.request.get('flag'),
+													self.request.get('lang'),
 													self.request.get('nick'),
 													self.request.get('email'),
 													self.request.get('platform'),
@@ -247,6 +270,53 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['msg']= "created giftcode category:"+self.request.get('category')+"<br> value:"+self.request.get('value')+"<br>"+ codelist
 			doRender(self,path,values)
 
+class ImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
+  def post(self):
+
+    upload_files = self.get_uploads('file')
+
+    if not upload_files:
+    	self.redirect('/developcenter/imageselector/?input='+self.request.get('input'))
+    	return
+
+    logging.info(upload_files)
+    blob_info = upload_files[0]
+    
+
+    user = users.get_current_user()
+    newImg = DB_AppImage()
+    newImg.developer = user
+    newImg.imageName = str(blob_info.key())
+    newImg.put()
+    self.redirect('/developcenter/imageselector/?input='+self.request.get('input'))
+
+
+
+  def get(self):
+	user = users.get_current_user()
+
+	uploadUrl = blobstore.create_upload_url('/developcenter/imageselector')
+	
+	
+  	imagelist =  DB_AppImage.query()
+  	for img in imagelist:
+  		imgurl = images.get_serving_url(img.imageName)
+  		img.imgurl=imgurl
+
+  	values={}
+  	values['images']=imagelist
+  	
+  	#logging.info(images.get_serving_url(blob_info.key()))
+  	values['input']=self.request.get('input')
+  	values['imgUploadUrl']=uploadUrl
+	doRender(self,'/developcenter/imageselector.html',values)
+
+class ImageServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
+  def get(self, resource):
+    resource = str(urllib.unquote(resource))
+    blob_info = blobstore.BlobInfo.get(resource)
+    self.send_blob(blob_info)
+
 config = {}
 config['webapp2_extras.sessions'] = {
     'secret_key': 'hsgraphdogsessionsk',
@@ -255,9 +325,12 @@ config['webapp2_extras.sessions'] = {
 app = webapp2.WSGIApplication([
 	('/test',TestHandler),
 	('/test/.*',TestHandler),
+	('/developcenter/imageselector', ImageUploadHandler),
+	('/developcenter/imageselector/', ImageUploadHandler),
+    ('/imageview/([^/]+)?', ImageServeHandler),
 	('/developcenter', DevelopCenterHandler),
 	('/developcenter/.*', DevelopCenterHandler),
-    ('/.*', MainHandler)
+	('/.*', MainHandler)
 ],
 config=config,
 debug=True)

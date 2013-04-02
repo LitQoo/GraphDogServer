@@ -15,6 +15,11 @@ indexes:
   - name: developer
   - name: scoresSortValue
 
+- kind: DB_AppImage
+  properties:
+  - name: __key__
+    direction: desc
+
 - kind: DB_AppNotice
   properties:
   - name: __key__

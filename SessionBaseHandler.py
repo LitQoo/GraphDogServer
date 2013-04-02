@@ -22,7 +22,7 @@ class SessionBaseHandler(webapp2.RequestHandler):
     @webapp2.cached_property
     def session(self):
         # Returns a session using the datastore.
-        return self.session_store.get_session(backend='datastore')
+        return self.session_store.get_session(name='sessiondb',backend='datastore')
 
 class Address(ndb.Model):
 	int1 = ndb.IntegerProperty()

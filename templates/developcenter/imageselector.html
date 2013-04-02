@@ -1,0 +1,33 @@
+<html>
+	<head>
+		<title>Developer Center</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script>
+		$(document).ready(function() {
+
+			
+			//var jsonStr = $(opener.document).find("#{{ input }}").val();
+
+			$("body").on("click",".selectImage", function(e){ //user click on remove text
+		        $(opener.document).find("#{{ input }}").val($(this).prop('src'));
+		        window.close()
+				return false;
+			}) 
+
+		});
+
+
+		</script>
+	</head>
+	<body>
+		<form action="{{imgUploadUrl}}" method="POST" enctype="multipart/form-data">
+		<input type="hidden" value="{{input}}" name="input">
+		
+			Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>
+		</form>
+		{% for image in images %}
+			<img src='{{image.imgurl}}' width='100' class="selectImage"><br><br>
+		{% endfor %}
+
+	</body>
+</html>

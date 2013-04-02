@@ -1,0 +1,787 @@
+<!doctype html>
+<html>
+  
+  <head>
+    <title>graphdog_reference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <link rel="stylesheet" href="https://app.divshot.com/css/bootstrap.css">
+    <link rel="stylesheet" href="https://app.divshot.com/css/bootstrap-responsive.css">
+    <script src="https://app.divshot.com/js/jquery.min.js"></script>
+    <script src="https://app.divshot.com/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body>
+    <div class="container">
+      <h1>GraphDog Reference</h1>
+      <hr>
+      <ol>
+        <li>Setup</li>
+        <li>How to use</li>
+        <li>Actions</li>
+      </ol>
+      <hr>
+      <h2>Setup</h2>
+      <p>1. Download Graphdog-client source at github</p>
+      <p>&nbsp; &nbsp;
+        <a href="https://github.com/LitQoo/GraphDog">http://github.com/LitQoo/GraphDog</a> 
+      </p>
+      <p>2. setup curl lib</p>
+      <hr>
+      <div class="row">
+        <div class="span12">
+          <h2>How to start</h2>
+        </div>
+      </div>
+      <div class="well well-small">
+        <p>
+          <span style="font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify;  color: rgb(80, 129, 134);">graphdog</span>
+          <span style="font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify;  color: rgb(0, 0, 0);">-&gt;</span>
+          <span style="font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify;  color: rgb(51, 89, 93);">setup</span>
+          <span style="color: rgb(138, 131, 126); font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify; ">(</span>
+          <span style="font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify;   color: rgb(112, 65, 167);">string</span>
+          <span style="color: rgb(138, 131, 126); font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify; ">&nbsp;appID,</span>
+          <span style="font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify; color: rgb(112, 65, 167);">string</span>
+          <span style="color: rgb(138, 131, 126); font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify; ">&nbsp;secretKey,</span>
+          <span style="font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify;  color: rgb(112, 65, 167);">string</span>
+          <span style="color: rgb(138, 131, 126); font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify; ">&nbsp;deviceId</span>
+          <span style="color: rgb(138, 131, 126); font-family: Menlo; font-size: 14.285714149475098px; line-height: normal; text-align: justify; ">);</span>
+          <br> 
+        </p>
+      </div>
+      <div class="row">
+        <div class="span8">
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Prameter</th>
+                <th>Descript</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>appID</td>
+                <td>app ID</td>
+                <td>String</td>
+              </tr>
+              <tr>
+                <td>secretKey</td>
+                <td>secret key</td>
+                <td>String, length=8</td>
+              </tr>
+              <tr>
+                <td>deviceId</td>
+                <td>device ID, like udid</td>
+                <td>String</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="alert alert-info alert-block">
+        <b>Example!</b>
+        <div>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(80, 129, 134);">graphdog</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;  color: rgb(0, 0, 0);">-&gt;</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">setup(</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; "><font color="#7041a7">"myapp"</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">, </span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; "><font color="#b933a1">"GDKEY123"&nbsp;</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">,</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; "><font color="#508186">myudid()</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">);</span> 
+        </div>
+      </div>
+      <hr>
+      <h2>How to use</h2>
+      <div class="row-fluid"></div>
+      <div class="well well-small">
+        <p>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(80, 129, 134);">graphdog</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(0, 0, 0);">-&gt;</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">command(</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;  color: rgb(112, 65, 167);">string</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">&nbsp;action,&nbsp;</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;  color: rgb(185, 51, 161);">const</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">&nbsp;</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(80, 129, 134);">JsonBox</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">::</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(80, 129, 134);">Object</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">*&nbsp;</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(185, 51, 161);">const</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">&nbsp;param,</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(80, 129, 134);">CCObject</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">*target,</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;  color: rgb(80, 129, 134);">GDSelType</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;">&nbsp;selector);</span>
+          <br> 
+        </p>
+      </div>
+      <div class="row">
+        <div class="span8">
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Prameter</th>
+                <th>Descript</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>action</td>
+                <td>action</td>
+                <td>String</td>
+              </tr>
+              <tr>
+                <td>param</td>
+                <td>secret key</td>
+                <td>JsonBox::Object or Null</td>
+              </tr>
+              <tr>
+                <td>target</td>
+                <td>callback target</td>
+                <td>CCObject or Null</td>
+              </tr>
+              <tr>
+                <td>select</td>
+                <td>callback selector</td>
+                <td>GDSelType or Null</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="alert alert-info alert-block">
+        <b>Example!</b>
+        <div>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(80, 129, 134);">graphdog</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; color: rgb(0, 0, 0);">-&gt;</span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">command(</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; "><font color="#7041a7">"timestamp"</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">, </span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; "><font color="#b933a1">null&nbsp;</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">,</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; "><font color="#508186">this</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">,</span>
+          <span style="font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify;"><font color="#508186">gd_selector(class::callbackfunction)</font></span>
+          <span style="color: rgb(51, 89, 93); font-family: 돋움; font-size: 12px; line-height: 10.285714149475098px; text-align: justify; ">);</span> 
+        </div>
+      </div>
+      <hr>
+      <h2>Actions</h2>
+      <ul>
+        <li>timestamp</li>
+        <li>getweek</li>
+        <li>getflagranks</li>
+        <li>startscores</li>
+        <li>getscores</li>
+        <li>getnotice</li>
+        <li>getcpilist</li>
+        <li>addcpievent</li>
+        <li>usegiftcode</li>
+      </ul>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>timestamp</h3>
+          <div class="alert">get timestamp</div>
+          <span class="label">Parameter</span>
+          <p>None</p>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>timestamp</td>
+                    <td>timestamp</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>getweek</h3>
+          <div class="alert">get week number of year</div>
+          <span class="label">Parameter</span>
+          <p>None</p>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>week</td>
+                    <td>week number of this year</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>lefttime</td>
+                    <td>left second to next week</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>getflagranks</h3>
+          <div class="alert">get flag rank</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>type</td>
+                    <td>game type, default value is "default"</td>
+                    <td>string</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>alluser</td>
+                    <td>week number of this year</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>lefttime</td>
+                    <td>left second to next week</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>list</td>
+                    <td>flag info</td>
+                    <td>array</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row-fluid">
+            <div class="span8">
+              <span class="label label-success">Return in list</span>
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>flag</td>
+                    <td>flag</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>score</td>
+                    <td>scores</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>user</td>
+                    <td>all user</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>startscores</h3>
+          <div class="alert">start real-time rank</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>type</td>
+                    <td>game type, default value is "default"</td>
+                    <td>string</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <p>comon return values</p>
+          <div class="row"></div>
+          <div class="row"></div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>getscores</h3>
+          <div class="alert">get real-time rank</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>score</td>
+                    <td>score</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>isover</td>
+                    <td>is game over</td>
+                    <td>bool</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>alluser</td>
+                    <td>week number of this year</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>myrank</td>
+                    <td>my rank</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>list</td>
+                    <td>rank info</td>
+                    <td>array</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row-fluid">
+            <div class="span8">
+              <span class="label label-success">Return in list</span>
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>auid</td>
+                    <td>user id</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>flag</td>
+                    <td>user flag</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>nick</td>
+                    <td>user nick</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>score</td>
+                    <td>user score</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>isover</td>
+                    <td>is game over</td>
+                    <td>bool</td>
+                  </tr>
+                  <tr>
+                    <td>type</td>
+                    <td>game type</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>stime</td>
+                    <td>start time</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>etime</td>
+                    <td>ended time</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>isme</td>
+                    <td>is me</td>
+                    <td>bool</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>getnotice</h3>
+          <div class="alert">get notice</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>limit</td>
+                    <td>limit of notice , defalut = 10</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>list</td>
+                    <td>notice info</td>
+                    <td>array</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row-fluid">
+            <div class="span8">
+              <span class="label label-success">Return in list</span>
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>id</td>
+                    <td>flag</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>title</td>
+                    <td>scores</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>content</td>
+                    <td>all user</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>userdata</td>
+                    <td>user data</td>
+                    <td>dict</td>
+                  </tr>
+                  <tr>
+                    <td>platform</td>
+                    <td>ios or android</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>createtime</td>
+                    <td>create time</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>getcpilist</h3>
+          <div class="alert">get cpi app list</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>limit</td>
+                    <td>limit of apps , defalut = 10</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>list</td>
+                    <td>apps info</td>
+                    <td>array</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row-fluid">
+            <div class="span8">
+              <span class="label label-success">Return in list</span>
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>id</td>
+                    <td>app id</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>title</td>
+                    <td>scores</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>bannerimg</td>
+                    <td>banner image url 320 * 50 png</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>iconimg</td>
+                    <td>icon image url 50*50 png</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>store</td>
+                    <td>store id</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>descript</td>
+                    <td>descript</td>
+                    <td>string</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>addcpievent</h3>
+          <div class="alert">add cpi event</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>aid</td>
+                    <td>cpi app id</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <p>comon return values</p>
+            </div>
+          </div>
+          <div class="row"></div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>usegiftcode</h3>
+          <div class="alert">use gift code</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>giftcode</td>
+                    <td>giftcode string , length=10</td>
+                    <td>string</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>category</td>
+                    <td>category</td>
+                    <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>value</td>
+                    <td>value</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>resultcode</td>
+                    <td>0 : complete
+                      <br> 870 : a gift code a hour
+                      <br> 880 : invalid code
+                      <br> 890 : used code
+                      <br> 
+                    </td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>resultmsg</td>
+                    <td>message</td>
+                    <td>string</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row"></div>
+        </div>
+      </div>
+      <div class="row"></div>
+    </div>
+  </body>
+
+</html>
