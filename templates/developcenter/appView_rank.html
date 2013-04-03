@@ -1,0 +1,33 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+userrank
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+		<table width=100% border=1>
+			<tr>
+				<td>name</td>
+				<td>category</td>
+				<td>score</td>
+				<td>time</td>
+				<td>userdata</td>
+			</tr>
+		{% for row in rankList %}
+			<tr>
+				<td>{{row.nick}}</td>
+				<td>{{row.category}}</td>
+				<td>{{row.score}}</td>
+				<td>
+					{{row.uTime}}~{{row.eTime}}
+				</td>
+				<td>
+					{{row.userdata}}
+				</td>
+			</tr>
+		{%endfor%}
+	</table>
+	{% endif %}
+{% endblock %}

@@ -144,6 +144,11 @@ class DevelopCenterHandler(SessionBaseHandler):
 			namespace_manager.set_namespace(appNamespace)
 			values['giftcodeList']=DB_AppGiftcode.query().order(-DB_AppGiftcode.createTime).fetch()
 
+		if path == '/developcenter/appView_rank.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['rankList']=DB_AppScore.query().order(-DB_AppScore.key).fetch(50)
+
+
 		if doRender(self,path,values):
 			return
 

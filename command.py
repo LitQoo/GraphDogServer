@@ -391,6 +391,10 @@ class CommandHandler(SessionBaseHandler):
 				logging.info(self.session.get('asID'))
 				self.session['asSortID']=''
 				self.session['asID']=''
+
+				if param.get('userdata'):
+					asInfo.userdata = param.get('userdata')
+
 				################ weekly, legned, 24h check
 
 			asInfo.put()
