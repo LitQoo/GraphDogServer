@@ -125,7 +125,11 @@ class CommandHandler(SessionBaseHandler):
 		# getweek
 		if action == 'getweek': ##########################################################################
 			result['week']=int(datetime.date.today().strftime("%U"))
-			result['lefttime']=int(2400)
+			localtime = time.localtime(time.time())
+			weekday = int(datetime.date.today().strftime("%u"))
+			if weekday==7:
+				weekday = 0
+			result['lefttime']=(7-weekday)*24*60*60 - localtime.tm_hour*60*60 -localtime.tm_min*60 - localtime.tm_sec
 			result['state']='ok'
 
 		# getweek
@@ -395,7 +399,38 @@ class CommandHandler(SessionBaseHandler):
 				if param.get('userdata'):
 					asInfo.userdata = param.get('userdata')
 
-				################ weekly, legned, 24h check
+				findweeklydata = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.auInfo==auInfo.key,DB_AppWeeklyScore.gType==asInfo.gType)).fetch(1)
+				weeklydata = {}
+				nowweek = int(datetime.date.today().strftime("%U"))
+				if findweeklydata:
+					weeklydata = findweeklydata[0]
+				else:
+					weeklydata = DB_AppWeeklyScore(score=0, week=0, gType=asInfo.gType, auInfo=auInfo.key)
+
+				if weeklydata.score<asInfo.score or weeklydata.week != nowweek:
+					weeklydata.score = asInfo.score
+					weeklydata.nick = asInfo.nick
+					weeklydata.flag = asInfo.flag
+					weeklydata.sTime = asInfo.uTime
+					weeklydata.eTime = asInfo.eTime
+					weeklydata.week = nowweek
+					weeklydata.put()
+					result['newweeklyscore']=True
+					findmaxdata = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.auInfo==auInfo.key,DB_AppMaxScore.gType==asInfo.gType)).fetch(1)
+					maxdata = {}
+					if findmaxdata:
+						maxdata = findmaxdata[0]
+					else:
+						maxdata = DB_AppMaxScore(score=0,gType=asInfo.gType,auInfo=auInfo.key)
+
+					if maxdata.score<asInfo.score:
+						maxdata.score = asInfo.score
+						maxdata.nick = asInfo.nick
+						maxdata.flag = asInfo.flag
+						maxdata.sTime = asInfo.uTime
+						maxdata.eTime = asInfo.eTime
+						maxdata.put()
+						result['newmaxscore']=True
 
 			asInfo.put()
 			#future = asInfo.put_async()
@@ -427,93 +462,46 @@ class CommandHandler(SessionBaseHandler):
 				result['list']=[]
 				rank=1
 				for sinfo in scorelist:
-					_new = sinfo.to_dict()
+					_new = sinfo.toResult()
 					_new['rank']=rank
-					_new['auid']=sinfo.auInfo.id()
-					_new['isover']=_new['isOver']
-					_new['etime']=_new['eTime']
-					_new['stime']=_new['uTime']
-					_new['type']=_new['gType']
-					_new['asid']=sinfo.key.id()
-					del _new['isOver']
-					del _new['auInfo']
-					del _new['eTime']
-					del _new['sTime']
-					del _new['uTime']
-					del _new['gType']
 
-					if sinfo.key.id()==asInfo.key.id():
+					if _new['asid']==asInfo.key.id():
 						_new['isme']=True
 						checkme=True
 
 					result['list'].append(_new)
 					rank=rank+1
 			else:
-				scorelist1 = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'))).order(-DB_AppScore.score).fetch(3)
-				scorelist2 = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'))).order(-DB_AppScore.score).fetch(offset=result.get('myrank')-5,limit=7)
+				scorelist = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'))).order(-DB_AppScore.score).fetch(3)
+				scorelist += DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'))).order(-DB_AppScore.score).fetch(offset=result.get('myrank')-5,limit=7)
+
 				result['list']=[]
 				rank=1
-				for sinfo in scorelist1:
-					_new = sinfo.to_dict()
-					_new['rank']=rank
-					_new['auid']=sinfo.auInfo.id()
-					_new['isover']=_new['isOver']
-					_new['etime']=_new['eTime']
-					_new['stime']=_new['uTime']
-					_new['type']=_new['gType']
-					del _new['isOver']
-					del _new['auInfo']
-					del _new['eTime']
-					del _new['sTime']
-					del _new['uTime']
-					del _new['gType']
 
-					if sinfo.key.id()==asInfo.key.id():
+				for sinfo in scorelist:
+					_new = sinfo.toResult()
+					ofs=0
+					if rank>3:
+						ofs =result['myrank']-8
+
+					_new['rank']=rank+ofs
+
+					if _new['asid']==asInfo.key.id():
 						_new['isme']=True
 						checkme=True
 
 					result['list'].append(_new)
 					rank=rank+1
 
-				rank = result['myrank']-4
-				for sinfo in scorelist2:
-					_new = sinfo.to_dict()
-					_new['rank']=rank
-					_new['auid']=sinfo.auInfo.id()
-					_new['isover']=_new['isOver']
-					_new['etime']=_new['eTime']
-					_new['stime']=_new['uTime']
-					_new['type']=_new['gType']
-					del _new['isOver']
-					del _new['auInfo']
-					del _new['eTime']
-					del _new['sTime']
-					del _new['uTime']
-					del _new['gType']
+				
+				
 
-					if sinfo.key.id()==asInfo.key.id():
-						_new['isme']=True
-						checkme=True
-
-					result['list'].append(_new)
-					rank=rank+1
 
 			if not checkme:
 				logging.info('write!! new!!!')
-				_new = asInfo.to_dict()
+				_new = asInfo.toResult()
 				_new['rank']=result['myrank']
-				_new['auid']=sinfo.auInfo.id()
-				_new['isover']=_new['isOver']
-				_new['etime']=_new['eTime']
-				_new['stime']=_new['uTime']
-				_new['type']=_new['gType']
 				_new['isme']=True
-				del _new['isOver']
-				del _new['auInfo']
-				del _new['eTime']
-				del _new['sTime']
-				del _new['uTime']
-				del _new['gType']
 
 				if result.get('myrank')<=10:
 					result['list'].insert(result.get('myrank')-1,_new)
@@ -522,11 +510,68 @@ class CommandHandler(SessionBaseHandler):
 					result['list'].insert(7,_new)
 					logging.info('insert to 7')
 				
-				logging.info(json.dumps(result.get('list')))
-
 				result['list'] = result['list'][:10]
 
 			result['state']='ok'
+
+		if action == 'getweeklyscores': ################################################################################
+			gType = param.get('type')
+			if not gType:
+				gType = 'default'
+
+			# find my info
+			findweeklydata = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.auInfo==auInfo.key,DB_AppWeeklyScore.gType==gType)).fetch(1)
+			weeklydata = {}
+			nowweek = int(datetime.date.today().strftime("%U"))
+			if findweeklydata:
+				weeklydata = findweeklydata[0]
+			else:
+				weeklydata = DB_AppWeeklyScore(score=0, week=0, gType=asInfo.gType, auInfo=auInfo.key)
+
+			#2. alluser
+			result['alluser'] = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.gType==gType,DB_AppWeeklyScore.week == nowweek)).count()
+			#1. myrank
+			result['myrank'] =  DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.score>weeklydata.score,DB_AppWeeklyScore.gType==gType,DB_AppWeeklyScore.week == nowweek)).count()+1
+
+
+			#asInfo = future.get_result()
+			checkme = False
+			if result['myrank']<=10:
+				scorelist = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.gType==gType,DB_AppWeeklyScore.week == nowweek)).order(-DB_AppWeeklyScore.score).fetch(10)
+				result['list']=[]
+				rank=1
+				for sinfo in scorelist:
+					_new = sinfo.toResult()
+					_new['rank']=rank
+
+					if _new['auid']==auInfo.key.id():
+						_new['isme']=True
+						checkme=True
+
+					result['list'].append(_new)
+					rank=rank+1
+			else:
+				scorelist = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.gType==gType,DB_AppWeeklyScore.week == nowweek)).order(-DB_AppWeeklyScore.score).fetch(3)
+				scorelist += DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.gType==gType,DB_AppWeeklyScore.week == nowweek)).order(-DB_AppWeeklyScore.score).fetch(offset=result.get('myrank')-5,limit=7)
+
+				result['list']=[]
+				rank=1
+
+				for sinfo in scorelist:
+					_new = sinfo.toResult()
+					ofs=0
+					if rank>3:
+						ofs =result['myrank']-8
+
+					_new['rank']=rank+ofs
+
+					if _new['auid']==auInfo.key.id():
+						_new['isme']=True
+						checkme=True
+
+					result['list'].append(_new)
+					rank=rank+1
+
 
 		if action == 'getnotices': #######################################################################################
 			# param - lastNoticeID, 
@@ -564,6 +609,12 @@ class CommandHandler(SessionBaseHandler):
 				requestDict['content']=request.content
 				requestDict['userdata']=json.loads(request.userdata)
 				result['list'].append(requestDict)
+			result['state']='ok'
+
+		if action == 'removerequest': #######################################################################################
+			request = DB_AppRequest.get_by_id(int(self.session.get('id')))
+			if request:
+				request.delete()
 			result['state']='ok'
 
 		if action == 'getcpilist': #######################################################################################

@@ -62,6 +62,41 @@ class DB_AppScore(ndb.Model):
 	isOver=ndb.BooleanProperty()
 	userdata = ndb.JsonProperty()
 
+	def toResult(self):
+		_new = self.to_dict()
+		_new['auid']=self.auInfo.id()
+		_new['isover']=_new['isOver']
+		_new['etime']=_new['eTime']
+		_new['stime']=_new['uTime']
+		_new['type']=_new['gType']
+		_new['asid']=self.key.id()
+		del _new['isOver']
+		del _new['auInfo']
+		del _new['eTime']
+		del _new['sTime']
+		del _new['uTime']
+		del _new['gType']
+		return _new
+
+class DB_AppMaxScore(ndb.Model):
+	auInfo=ndb.KeyProperty(DB_AppUser)
+	nick=ndb.StringProperty()
+	flag=ndb.StringProperty()
+	gType=ndb.StringProperty()
+	score=ndb.IntegerProperty()
+	sTime=ndb.IntegerProperty()
+	eTime=ndb.IntegerProperty()
+
+class DB_AppWeeklyScore(ndb.Model):
+	auInfo=ndb.KeyProperty(DB_AppUser)
+	nick=ndb.StringProperty()
+	flag=ndb.StringProperty()
+	week=ndb.IntegerProperty()
+	gType=ndb.StringProperty()
+	score=ndb.IntegerProperty()
+	sTime=ndb.IntegerProperty()
+	eTime=ndb.IntegerProperty()
+
 class DB_AppNotice(ndb.Model):
 	title=ndb.StringProperty()
 	content = ndb.TextProperty()
