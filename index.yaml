@@ -54,6 +54,17 @@ indexes:
   - name: score
     direction: desc
 
+- kind: DB_AppMaxScore
+  properties:
+  - name: gType
+  - name: score
+
+- kind: DB_AppMaxScore
+  properties:
+  - name: gType
+  - name: score
+    direction: desc
+
 - kind: DB_AppUser
   properties:
   - name: __key__

@@ -86,6 +86,19 @@ class DB_AppMaxScore(ndb.Model):
 	score=ndb.IntegerProperty()
 	sTime=ndb.IntegerProperty()
 	eTime=ndb.IntegerProperty()
+	
+	def toResult(self):
+		_new = self.to_dict()
+		_new['auid']=self.auInfo.id()
+		_new['etime']=_new['eTime']
+		_new['stime']=_new['sTime']
+		_new['type']=_new['gType']
+		_new['awsid']=self.key.id()
+		del _new['auInfo']
+		del _new['eTime']
+		del _new['sTime']
+		del _new['gType']
+		return _new
 
 class DB_AppWeeklyScore(ndb.Model):
 	auInfo=ndb.KeyProperty(DB_AppUser)
@@ -96,6 +109,19 @@ class DB_AppWeeklyScore(ndb.Model):
 	score=ndb.IntegerProperty()
 	sTime=ndb.IntegerProperty()
 	eTime=ndb.IntegerProperty()
+
+	def toResult(self):
+		_new = self.to_dict()
+		_new['auid']=self.auInfo.id()
+		_new['etime']=_new['eTime']
+		_new['stime']=_new['sTime']
+		_new['type']=_new['gType']
+		_new['awsid']=self.key.id()
+		del _new['auInfo']
+		del _new['eTime']
+		del _new['sTime']
+		del _new['gType']
+		return _new
 
 class DB_AppNotice(ndb.Model):
 	title=ndb.StringProperty()

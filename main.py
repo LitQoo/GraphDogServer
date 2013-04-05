@@ -146,7 +146,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/appView_rank.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['rankList']=DB_AppScore.query().order(-DB_AppScore.uTime).fetch(50)
+			values['rankList']=DB_AppScore.query().order(-DB_AppScore.uTime).fetch()
 
 
 		if doRender(self,path,values):

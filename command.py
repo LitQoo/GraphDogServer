@@ -367,7 +367,6 @@ class CommandHandler(SessionBaseHandler):
 
 
 		if action == 'getscores': ##########################################################################
-			logging.info('test')
 			logging.info(namespace_manager.get_namespace())
 			logging.info(str(self.session.get('asID')))
 			logging.info(str(self.session.get('asSortTime')))
@@ -378,7 +377,8 @@ class CommandHandler(SessionBaseHandler):
 			asInfo =  ndb.Key('DB_AppScore',int(self.session.get('asID'))).get()
 			asSortTime = self.session.get('asSortTime')
 			asSortTimeList = [self.session.get('asSortTime'),self.session.get('asSortPrevTime')]
-			gType = self.session.get('gType')
+			gType = asInfo.gType
+			
 			if not asInfo:
 				self.printError('dont find asid',100)
 				return
@@ -387,7 +387,8 @@ class CommandHandler(SessionBaseHandler):
 				asInfo.score = int(param.get('score'))
 			else:
 				asInfo.score = 0
-				
+			
+
 			asInfo.isOver = bool(param.get('isover'))
 
 			if asInfo.isOver:
@@ -432,7 +433,7 @@ class CommandHandler(SessionBaseHandler):
 						maxdata.put()
 						result['newmaxscore']=True
 
-			asInfo.put()
+			
 			#future = asInfo.put_async()
 			#tt = future.get_result()
 			#logging.info('test value')
@@ -445,9 +446,9 @@ class CommandHandler(SessionBaseHandler):
 
 
 			#2. alluser
-			result['alluser'] = DB_AppScore.query(DB_AppScore.sTime.IN(asSortTimeList)).count()
+			result['alluser'] = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType)).count()
 			#1. myrank
-			result['myrank'] =  DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'),DB_AppScore.score>asInfo.score)).count()+1
+			result['myrank'] =  result.get('alluser')-DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType,DB_AppScore.score<=asInfo.score)).count()+1
 
 			logging.info('myrank is')
 			logging.info(result['myrank'])
@@ -456,63 +457,112 @@ class CommandHandler(SessionBaseHandler):
 			logging.info('info '+str(asInfo.score))
 
 			#asInfo = future.get_result()
-			checkme = False
+			isAddMe=False
+			result['list']=[]
+			rank=1
+
+
 			if result['myrank']<=10:
-				scorelist = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList)),DB_AppScore.gType==self.session.get('gType')).order(-DB_AppScore.score).fetch(10)
-				result['list']=[]
-				rank=1
+				scorelist = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList)),DB_AppScore.gType==gType).order(-DB_AppScore.score).fetch(10)
+
 				for sinfo in scorelist:
 					_new = sinfo.toResult()
+
+					if isAddMe==False and _new.get('score')<asInfo.score:
+						_me = asInfo.toResult()
+						_me['rank']=rank
+						_me['isme']=True
+						result['list'].append(_me)
+						rank+=1
+						isAddMe=True
+
 					_new['rank']=rank
-
-					if _new['asid']==asInfo.key.id():
-						_new['isme']=True
-						checkme=True
-
-					result['list'].append(_new)
-					rank=rank+1
+					if _new['asid']!=asInfo.key.id():
+						result['list'].append(_new)
+						rank=rank+1
 			else:
-				scorelist = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'))).order(-DB_AppScore.score).fetch(3)
-				scorelist += DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==self.session.get('gType'))).order(-DB_AppScore.score).fetch(offset=result.get('myrank')-5,limit=7)
+				scorelist = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType)).order(-DB_AppScore.score).fetch(3)
+				scorelist += DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType)).order(-DB_AppScore.score).fetch(offset=result.get('myrank')-5,limit=7)
 
-				result['list']=[]
-				rank=1
 
 				for sinfo in scorelist:
 					_new = sinfo.toResult()
+					
 					ofs=0
 					if rank>3:
 						ofs =result['myrank']-8
 
+					if isAddMe==False and _new.get('score')<asInfo.score:
+						_me = asInfo.toResult()
+						_me['rank']=rank+ofs
+						_me['isme']=True
+						result['list'].append(_me)
+						rank+=1
+						isAddMe=True
+
 					_new['rank']=rank+ofs
 
-					if _new['asid']==asInfo.key.id():
-						_new['isme']=True
-						checkme=True
+					if _new['asid']!=asInfo.key.id():
+						result['list'].append(_new)
+						rank=rank+1
 
-					result['list'].append(_new)
-					rank=rank+1
 
+			if not isAddMe:
+				_me = asInfo.toResult()
+				_me['rank']=rank
+				_me['isme']=True
+				result['list'].append(_me)
+
+
+#			if not checkme:
+#				logging.info('write!! new!!!')
+#				_new = asInfo.toResult()
+#				_new['rank']=result['myrank']
+#				_new['isme']=True
+#
+#				if result.get('myrank')<=10:
+#					result['list'].insert(result.get('myrank')-1,_new)
+#					logging.info('insert to myrank'+str(result.get('myrank')-1))
+#				else:
+#					result['list'].insert(7,_new)
+#					logging.info('insert to 7')
 				
 				
+			result['list'] = result['list'][:10]
+			result['state']='ok'
+			asInfo.put()
 
+		if action == 'getmaxscores': ###############################################################################
+			gType = param.get('type')
+			if not gType:
+				gType = 'default'
 
-			if not checkme:
-				logging.info('write!! new!!!')
-				_new = asInfo.toResult()
-				_new['rank']=result['myrank']
-				_new['isme']=True
+			maxdata = {}
+			findmaxdata = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.auInfo==auInfo.key,DB_AppMaxScore.gType==gType)).fetch(1)
+			if findmaxdata:
+				maxdata = findmaxdata[0]
+			else:
+				maxdata = DB_AppMaxScore(score=0,gType=gType,auInfo=auInfo.key,flag=auInfo.flag,nick=auInfo.nick)
 
-				if result.get('myrank')<=10:
-					result['list'].insert(result.get('myrank')-1,_new)
-					logging.info('insert to myrank'+str(result.get('myrank')-1))
-				else:
-					result['list'].insert(7,_new)
-					logging.info('insert to 7')
-				
-				result['list'] = result['list'][:10]
+			result['alluser']=DB_AppMaxScore.query(DB_AppMaxScore.gType==gType).count()
+			result['myrank']=result.get('alluser')-DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType,DB_AppMaxScore.score<=maxdata.score)).count()
+
+			maxlist = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(10)
+
+			result['list']=[]
+			r=1
+			for minfo in maxlist:
+				resultdata = minfo.toResult()
+				resultdata['rank']=r
+
+				if resultdata['auid']==auInfo.key.id():
+					resultdata['isme']=True
+
+				result['list'].append(resultdata)
+				r+=1
 
 			result['state']='ok'
+
 
 		if action == 'getweeklyscores': ################################################################################
 			gType = param.get('type')
