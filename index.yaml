@@ -15,9 +15,27 @@ indexes:
   - name: developer
   - name: scoresSortValue
 
+- kind: DB_AppFlagScore
+  properties:
+  - name: date
+  - name: gType
+  - name: score
+    direction: desc
+
 - kind: DB_AppImage
   properties:
   - name: __key__
+    direction: desc
+
+- kind: DB_AppMaxScore
+  properties:
+  - name: gType
+  - name: score
+
+- kind: DB_AppMaxScore
+  properties:
+  - name: gType
+  - name: score
     direction: desc
 
 - kind: DB_AppNotice
@@ -54,30 +72,12 @@ indexes:
   - name: score
     direction: desc
 
-- kind: DB_AppMaxScore
-  properties:
-  - name: gType
-  - name: score
-
-- kind: DB_AppMaxScore
-  properties:
-  - name: gType
-  - name: score
-    direction: desc
-
 - kind: DB_AppUser
   properties:
   - name: __key__
     direction: desc
 
-- kind: app_testapps_score
+- kind: DB_AppLog
   properties:
   - name: __key__
-    direction: desc
-
-- kind: testModel
-  properties:
-  - name: int1
-    direction: desc
-  - name: int2
     direction: desc

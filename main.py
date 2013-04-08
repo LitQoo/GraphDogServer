@@ -87,6 +87,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 		developer={}
 		logging.info('get start')
 		
+
 		if user:
 			developer=ndb.Key('DB_Developer',user.email()).get()
 		
@@ -99,7 +100,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 		if developer:
 			values['developer_email']=developer.email
 			values['developer_nickname']=developer.name
-		
+
 		values['loginurl'] = users.create_login_url("/developcenter")
 		values['logouturl'] = users.create_logout_url("/developcenter")
 
@@ -139,6 +140,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 		if path == '/developcenter/appView_user.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			values['userList']=DB_AppUser.query().order(-DB_AppUser.key).fetch()
+
+		if path == '/developcenter/appView_log.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['logList']=DB_AppLog.query().order(-DB_AppLog.key).fetch()
 
 		if path == '/developcenter/appView_giftcode.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
@@ -204,7 +209,6 @@ class DevelopCenterHandler(SessionBaseHandler):
 				return
 			namespace_manager.set_namespace(gdNamespace)
 			aInfo.title = self.request.get('title')
-			logging.info('ok'+self.request.get('group'))
 			aInfo.group = self.request.get('group')
 			aInfo.secretKey = self.request.get('secretKey')
 			aInfo.scoresSortValue = int(self.request.get('scoresSortValue'))

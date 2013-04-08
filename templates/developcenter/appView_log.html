@@ -1,0 +1,27 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+loglist
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+		<table width=100% border=1>
+			<tr>
+				<td>user</td>
+				<td>log</td>
+				<td>time</td>
+			</tr>
+		{% for log in logList %}
+			<tr>
+				<td>{{log.auInfo.id}}</td>
+				<td>{{log.text}}</td>
+				<td>
+					{{log.time}}
+				</td>
+			</tr>
+		{%endfor%}
+	</table>
+	{% endif %}
+{% endblock %}

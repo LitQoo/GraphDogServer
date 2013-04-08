@@ -31,14 +31,13 @@ class DB_App(ndb.Model):
 	store = ndb.JsonProperty()
 	descript = ndb.JsonProperty()
 
-
 class DB_User(ndb.Model):
 	nick = ndb.StringProperty()
 	flag = ndb.StringProperty()
 	udid = ndb.StringProperty()
 	installs = ndb.StringProperty(repeated=True)
 	mail = ndb.StringProperty()
-	CPIEvents = ndb.PickleProperty(default = [])
+	CPIEvents = ndb.JsonProperty(default = [])
 
 class DB_AppUser(ndb.Model):
 	nick = ndb.StringProperty()
@@ -49,6 +48,11 @@ class DB_AppUser(ndb.Model):
 	udid = ndb.StringProperty()
 	userdata = ndb.JsonProperty()
 	joinDate = ndb.DateProperty(auto_now=True)
+
+class DB_AppLog(ndb.Model):
+	auInfo = ndb.KeyProperty(DB_AppUser)
+	text = ndb.StringProperty()
+	time = ndb.IntegerProperty()
 
 class DB_AppScore(ndb.Model):
 	auInfo=ndb.KeyProperty(DB_AppUser)
@@ -78,6 +82,19 @@ class DB_AppScore(ndb.Model):
 		del _new['gType']
 		return _new
 
+class DB_AppFlagScore(ndb.Model):
+	date = ndb.StringProperty()
+	flag = ndb.StringProperty()
+	score = ndb.IntegerProperty()
+	user = ndb.IntegerProperty()
+	gType = ndb.StringProperty()
+	
+	def toResult(self):
+		_new = self.to_dict()
+		_new['type']=_new['gType']
+		del _new['gType']
+		return _new
+
 class DB_AppMaxScore(ndb.Model):
 	auInfo=ndb.KeyProperty(DB_AppUser)
 	nick=ndb.StringProperty()
@@ -86,6 +103,7 @@ class DB_AppMaxScore(ndb.Model):
 	score=ndb.IntegerProperty()
 	sTime=ndb.IntegerProperty()
 	eTime=ndb.IntegerProperty()
+	userdata = ndb.JsonProperty()
 	
 	def toResult(self):
 		_new = self.to_dict()
@@ -109,6 +127,7 @@ class DB_AppWeeklyScore(ndb.Model):
 	score=ndb.IntegerProperty()
 	sTime=ndb.IntegerProperty()
 	eTime=ndb.IntegerProperty()
+	userdata = ndb.JsonProperty()
 
 	def toResult(self):
 		_new = self.to_dict()

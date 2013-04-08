@@ -124,7 +124,7 @@ class CommandHandler(SessionBaseHandler):
 
 		# getweek
 		if action == 'getweek': ##########################################################################
-			result['week']=int(datetime.date.today().strftime("%U"))
+			result['week']=int(datetime.date.today().strftime("%U"))+1
 			localtime = time.localtime(time.time())
 			weekday = int(datetime.date.today().strftime("%u"))
 			if weekday==7:
@@ -298,32 +298,49 @@ class CommandHandler(SessionBaseHandler):
 			if not gType:
 				gType = 'default'
 
+
+			gType = 'WORLDCUP'
 			logging.info('startscores')
 			#DB_AppScore.sTime==startTime
-			_list = [];
-			if gType=='all':
-				_list = DB_AppScore.query().fetch(5)
-			else:
-				_list = DB_AppScore.query(DB_AppScore.gType==self.session.get('gType')).fetch(5)
+			nowdate = datetime.date.today().strftime("%Y%m%d")
+			flaglist =  DB_AppFlagScore.query(ndb.AND(DB_AppFlagScore.date==nowdate,DB_AppFlagScore.gType==gType)).order(-DB_AppFlagScore.score).fetch(10)
+			result['list']=[]
+			alluser=0
+			for flagInfo in flaglist:
+				_new = flagInfo.toResult()
+				result['list'].append(_new)
+				alluser += _new.get('user')
 			
-			alluser=0;
-			flags={}
-			for _as in _list:
-				if not flags.get(_as.flag):
-					flags[_as.flag]={'user':int(1),'score':int(_as.score),'flag':_as.flag}
-				else:
-					_cnt = int(flags.get(_as.flag).get('user'))+1
-					_scr = int(flags.get(_as.flag).get('score'))+_as.score
-					flags[_as.flag]={'score':_scr,'user':_cnt,'flag':_as.flag}
 
-				alluser=alluser+1
+
+
+			#_list = [];
+			
+
+
+			#if gType=='all':
+			#	_list = DB_AppScore.query().fetch(5)
+			#else:
+			#	_list = DB_AppScore.query(DB_AppScore.gType==self.session.get('gType')).fetch(5)
+			
+			#alluser=0;
+			#flags={}
+			#for _as in _list:
+			#	if not flags.get(_as.flag):
+			#		flags[_as.flag]={'user':int(1),'score':int(_as.score),'flag':_as.flag}
+			#	else:
+			#		_cnt = int(flags.get(_as.flag).get('user'))+1
+			#		_scr = int(flags.get(_as.flag).get('score'))+_as.score
+			#		flags[_as.flag]={'score':_scr,'user':_cnt,'flag':_as.flag}
+
+			#	alluser=alluser+1
 
 			#flags=sorted(flags, key=flags.__getitem__,flags.__getitem__, reverse=True)
 
-			items = [v for k, v in flags.items()]
-			items=sorted(items, key=lambda x: x['score'],cmp=lambda x,y: y-x) 
+			#items = [v for k, v in flags.items()]
+			#items=sorted(items, key=lambda x: x['score'],cmp=lambda x,y: y-x) 
 
-			result['list']=items[:5]
+			#result['list']=items[:5]
 			result['alluser']=alluser
 			result['state']='ok'
 
@@ -333,6 +350,7 @@ class CommandHandler(SessionBaseHandler):
 			sortValue=aInfo.scoresSortValue
 		#param ->  type, score, userdata, 
 			gType = param.get('type')
+			userdata = param.get('userdata')
 			if not gType:
 				gType = 'default'
 
@@ -348,6 +366,8 @@ class CommandHandler(SessionBaseHandler):
 			asInfo.auInfo = auInfo.key
 			asInfo.flag = tokens.get('flag')
 			asInfo.nick = tokens.get('nick')
+			if userdata:
+				asInfo.userdata = userdata
 			asInfo.isOver = False
 			asInfo.put()
 
@@ -378,6 +398,7 @@ class CommandHandler(SessionBaseHandler):
 			asSortTime = self.session.get('asSortTime')
 			asSortTimeList = [self.session.get('asSortTime'),self.session.get('asSortPrevTime')]
 			gType = asInfo.gType
+			userdata = param.get('userdata')
 			
 			if not asInfo:
 				self.printError('dont find asid',100)
@@ -391,45 +412,84 @@ class CommandHandler(SessionBaseHandler):
 
 			asInfo.isOver = bool(param.get('isover'))
 
+
+			if type(asInfo.userdata)==dict:
+				asInfo.userdata.update(userdata)
+			else:
+				asInfo.userdata = userdata
+
+			# game over!!
 			if asInfo.isOver:
 				asInfo.eTime = cTime
 				logging.info(self.session.get('asID'))
 				self.session['asSortID']=''
 				self.session['asID']=''
 
-				if param.get('userdata'):
-					asInfo.userdata = param.get('userdata')
-
-				findweeklydata = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.auInfo==auInfo.key,DB_AppWeeklyScore.gType==asInfo.gType)).fetch(1)
-				weeklydata = {}
-				nowweek = int(datetime.date.today().strftime("%U"))
-				if findweeklydata:
-					weeklydata = findweeklydata[0]
+				#flag scores update
+				nowdate = datetime.date.today().strftime("%Y%m%d")
+				flagid = nowdate+"_"+gType+"_"+auInfo.flag
+				flagInfo=DB_AppFlagScore.get_or_insert(flagid)
+				flagInfo.date = nowdate
+				flagInfo.flag = auInfo.flag
+				flagInfo.gType = gType
+				
+				if flagInfo.score:
+					flagInfo.score += int(param.get('score'))/10
 				else:
-					weeklydata = DB_AppWeeklyScore(score=0, week=0, gType=asInfo.gType, auInfo=auInfo.key)
+					flagInfo.score = int(param.get('score'))/10
+				
+				if flagInfo.user:
+					flagInfo.user += 1
+				else:
+					flagInfo.user = 1
+
+				flagInfo.put()
+
+				#check weekly score
+				nowweek = int(datetime.date.today().strftime("%U"))
+				weekid = str(auInfo.key.id())+"_"+str(gType)+"_"+str(nowweek)
+
+				#findweeklydata = DB_AppWeeklyScore.query(ndb.AND(DB_AppWeeklyScore.auInfo==auInfo.key,DB_AppWeeklyScore.gType==asInfo.gType,DB_AppWeeklyScore.week==nowweek)).fetch(1)
+				weeklydata = DB_AppWeeklyScore.get_or_insert(weekid)
+
+				#if findweeklydata:
+				#	weeklydata = findweeklydata[0]
+				#else:
+				#	weeklydata = DB_AppWeeklyScore(score=0, week=nowweek, gType=asInfo.gType, auInfo=auInfo.key)
 
 				if weeklydata.score<asInfo.score or weeklydata.week != nowweek:
+					weeklydata.week=nowweek
+					weeklydata.gType=asInfo.gType
+					weeklydata.auInfo=auInfo.key
 					weeklydata.score = asInfo.score
 					weeklydata.nick = asInfo.nick
 					weeklydata.flag = asInfo.flag
 					weeklydata.sTime = asInfo.uTime
 					weeklydata.eTime = asInfo.eTime
-					weeklydata.week = nowweek
+					weeklydata.userdata = asInfo.userdata
 					weeklydata.put()
 					result['newweeklyscore']=True
-					findmaxdata = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.auInfo==auInfo.key,DB_AppMaxScore.gType==asInfo.gType)).fetch(1)
-					maxdata = {}
-					if findmaxdata:
-						maxdata = findmaxdata[0]
-					else:
-						maxdata = DB_AppMaxScore(score=0,gType=asInfo.gType,auInfo=auInfo.key)
+					
+
+
+					#check max score
+					maxid = str(auInfo.key.id())+"_"+str(gType)
+					#findmaxdata = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.auInfo==auInfo.key,DB_AppMaxScore.gType==asInfo.gType)).fetch(1)
+					maxdata = DB_AppMaxScore.get_or_insert(maxid)
+					#if findmaxdata:
+					#	maxdata = findmaxdata[0]
+					#else:
+					#	maxdata = DB_AppMaxScore(score=0,gType=asInfo.gType,auInfo=auInfo.key)
 
 					if maxdata.score<asInfo.score:
+						maxdata.gType = gType
+						maxdata.auInfo = auInfo.key
 						maxdata.score = asInfo.score
 						maxdata.nick = asInfo.nick
 						maxdata.flag = asInfo.flag
 						maxdata.sTime = asInfo.uTime
 						maxdata.eTime = asInfo.eTime
+						maxdata.userdata = asInfo.userdata
 						maxdata.put()
 						result['newmaxscore']=True
 
@@ -448,7 +508,11 @@ class CommandHandler(SessionBaseHandler):
 			#2. alluser
 			result['alluser'] = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType)).count()
 			#1. myrank
-			result['myrank'] =  result.get('alluser')-DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType,DB_AppScore.score<=asInfo.score)).count()+1
+			if asInfo.score == 0:
+				result['myrank']=result.get('alluser')
+			else:
+				result['myrank'] =  result.get('alluser')-DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType,DB_AppScore.score<=asInfo.score)).count()+1
+
 
 			logging.info('myrank is')
 			logging.info(result['myrank'])
@@ -468,7 +532,7 @@ class CommandHandler(SessionBaseHandler):
 				for sinfo in scorelist:
 					_new = sinfo.toResult()
 
-					if isAddMe==False and _new.get('score')<asInfo.score:
+					if isAddMe==False and _new.get('score')<=asInfo.score:
 						_me = asInfo.toResult()
 						_me['rank']=rank
 						_me['isme']=True
@@ -492,7 +556,7 @@ class CommandHandler(SessionBaseHandler):
 					if rank>3:
 						ofs =result['myrank']-8
 
-					if isAddMe==False and _new.get('score')<asInfo.score:
+					if isAddMe==False and _new.get('score')<=asInfo.score:
 						_me = asInfo.toResult()
 						_me['rank']=rank+ofs
 						_me['isme']=True
@@ -545,15 +609,26 @@ class CommandHandler(SessionBaseHandler):
 				maxdata = DB_AppMaxScore(score=0,gType=gType,auInfo=auInfo.key,flag=auInfo.flag,nick=auInfo.nick)
 
 			result['alluser']=DB_AppMaxScore.query(DB_AppMaxScore.gType==gType).count()
-			result['myrank']=result.get('alluser')-DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType,DB_AppMaxScore.score<=maxdata.score)).count()
+			result['myrank']=result.get('alluser')-DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType,DB_AppMaxScore.score<=maxdata.score)).count()+1
 
-			maxlist = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(10)
-
+			notinten=False
+			if(result.get('myrank')<=10):
+				maxlist = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(10)
+			else:
+				maxlist = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(3)
+				maxlist+= DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(offset=result.get('myrank')-5,limit=7)
+				notinten=True
 			result['list']=[]
 			r=1
+
 			for minfo in maxlist:
 				resultdata = minfo.toResult()
-				resultdata['rank']=r
+				
+				ofs=0
+				if r>3 and notinten:
+					ofs =result['myrank']-8
+
+				resultdata['rank']=r+ofs
 
 				if resultdata['auid']==auInfo.key.id():
 					resultdata['isme']=True
@@ -694,10 +769,22 @@ class CommandHandler(SessionBaseHandler):
 				cpidict['descript']=descript
 
 				result['list'].append(cpidict)
+			
+			namespace_manager.set_namespace(appNamespace)
+			
+			completeList = DB_AppRequest.query(ndb.AND(DB_AppRequest.receiver==auInfo.key,DB_AppRequest.category=='cpiEvent')).fetch()
+			
+			result['completelist']=[]
+
+			for com in completeList:
+				_new = com.to_dict()
+				_new['id']=com.key.id()
+				del _new['receiver']
+				del _new['sender']
+				result['completelist'].append(_new)
 
 			result['state']='ok'
-			namespace_manager.set_namespace(appNamespace)
-		
+
 		if action == 'addcpievent': #######################################################################################
 			namespace_manager.set_namespace(gdNamespace)
 			cpiappid = param.get('aid')
@@ -739,10 +826,10 @@ class CommandHandler(SessionBaseHandler):
 			if result.get('resultcode')==100:
 				result['category']=giftcode.category
 				result['value']=giftcode.value
-				giftcode.useTime = int(time.time())
+				giftcode.useTime = int(cTime)
 				giftcode.user = auInfo.key
 				giftcode.put()
-				self.session['giftcodeTime']=int(time.time())
+				self.session['giftcodeTime']=int(cTime)
 
 		if action == 'addmail':#######################################################################################
 			namespace_manager.set_namespace(gdNamespace)
@@ -754,6 +841,15 @@ class CommandHandler(SessionBaseHandler):
 			result['state']='ok'
 			auInfo.mail = param.get('mail')
 			auInfo.put()
+
+		if action == 'writelog':#######################################################################################
+			newlog = DB_AppLog()
+			newlog.text = param.get('log')
+			newlog.time = int(cTime)
+			newlog.auInfo = auInfo.key
+			newlog.put()
+			result['state']='ok'
+
 
 		namespace_manager.set_namespace(appNamespace)
 		#결과리턴
