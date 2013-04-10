@@ -3,10 +3,14 @@
 <form action=appView_notice.html method=post>
 	<input type=hidden name=aID value={{aID|safe}}>
 			title:<input type=text name=title value={{notice.title|safe}}><br>
+			category:<input type=text name=category value={{notice.category|safe}}> (notice,update,housead)<br>
 			content<br>
-			<textarea row=10 cols=30 name=content>{{notice.content|safe}}</textarea> <br>
+			<textarea row=10 cols=30 name=content id=content>{{notice.content|safe}}</textarea> <br>
+			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=content&keyname=default&valuename=content','jsoneditor','width=500 height=500 menubar=no status=no')">edit userdata</a>
+			<br>
 			userdata<br>
-			<textarea row=10 cols=30 name=userData></textarea> <br>
+			<textarea row=10 cols=30 name=userdata id=userdata>{{notice.userdata|safe}}</textarea> <br>
+			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=userdata&keyname=key&valuename=value','jsoneditor','width=500 height=500 menubar=no status=no')">edit userdata</a>
 			platform:<select name=platform>
 				<option value=all>all</option>
 				<option value=ios>ios</option>
@@ -23,16 +27,20 @@
 		<table width=100% border=1>
 			<tr>
 				<td>no</td>
+				<td>category</td>
 				<td>title</td>
 				<td>content</td>
+				<td>userdata</td>
 				<td>platform</td>
 				<td>time</td>
 			</tr>
 		{% for notice in noticeList %}
 			<tr>
 				<td>{{notice.key.id}}</td>
+				<td>{{notice.category}}</td>
 				<td>{{notice.title}}</td>
 				<td>{{notice.content}}</td>
+				<td>{{notice.userdata}}</td>
 				<td>{{notice.platform}}</td>
 				<td>
 					{{notice.createTime}}

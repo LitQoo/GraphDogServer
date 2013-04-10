@@ -54,6 +54,7 @@ def doRender(handler,tname='index.html',values={}):
 	newval = dict(values)
 	newval['path']=handler.request.path
 
+	
 	outstr = template.render(temp,newval)
 	handler.response.write(outstr)
 	return True
@@ -128,10 +129,16 @@ class DevelopCenterHandler(SessionBaseHandler):
 			gdNamespace = namespace_manager.get_namespace()
 			appNamespace = 'APP_'+aID
 			values['aInfo'] = DB_App.get_by_id(aID)
+			logging.info(type(values['aInfo'].store))
+			values['aInfo'].store = json.dumps(values.get('aInfo').store,encoding="utf-8",ensure_ascii=False)
+			values['aInfo'].cpiReward = json.dumps(values.get('aInfo').cpiReward,encoding="utf-8",ensure_ascii=False)
+			values['aInfo'].descript = json.dumps(values.get('aInfo').descript,encoding="utf-8",ensure_ascii=False)
 			values['aID']=aID;
 
 		if path == '/developcenter/appmanager.html':	####################################################################
 			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
+			values['userList'] = DB_User.query().fetch()
+
 
 		if path == '/developcenter/appView_notice.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
@@ -143,7 +150,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/appView_log.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['logList']=DB_AppLog.query().order(-DB_AppLog.key).fetch()
+			values['logList']=DB_AppLog.query().order(-DB_AppLog.time).fetch()
 
 		if path == '/developcenter/appView_giftcode.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
@@ -215,12 +222,16 @@ class DevelopCenterHandler(SessionBaseHandler):
 			aInfo.useCPI = bool(self.request.get('useCPI'))
 			aInfo.bannerImg = self.request.get('bannerImg')
 			aInfo.iconImg = self.request.get('iconImg')
-			aInfo.store = self.request.get('store')
-			aInfo.descript = self.request.get('descript')
+
+			aInfo.store = json.loads(self.request.get('store'))
+			aInfo.descript = json.loads(self.request.get('descript'))
+			aInfo.cpiReward = json.loads(self.request.get('cpiReward'))
 			aInfo.put()
 
-			values['aInfo'] = aInfo
-			doRender(self,path,values)
+			#values['aInfo'] = aInfo
+			
+			self.redirect(path+"?aID="+self.request.get('aID'))
+			#doRender(self,path,values)
 
 				
 
@@ -245,19 +256,25 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 			values['dectoken']= CommandHandler.decToken(values['enctoken'],values['secretKey'])
 			values['decparam']= CommandHandler.decParam(values['encparam'])
-			doRender(self,path,values)
+			
+
+			self.redirect(path+"?aID="+self.request.get('aID'))
+			#doRender(self,path,values)
 
 		if path =='/developcenter/appView_notice.html':######################################
 			namespace_manager.set_namespace(appNamespace)
 			newNotice = DB_AppNotice()
 			newNotice.title=self.request.get('title')
-			newNotice.content=self.request.get('content')
-			newNotice.userData=self.request.get('userData')
+			newNotice.category=self.request.get('category')
+			newNotice.content=json.loads(self.request.get('content'))
+			newNotice.userdata=json.loads(self.request.get('userdata'))
 			newNotice.platform=self.request.get('platform')
 			newNotice.createTime = int(time.time())
 			newNotice.put()
 			values['msg']='save new data'
-			doRender(self,path,values)
+			
+			self.redirect(path+"?aID="+self.request.get('aID'))
+			#doRender(self,path,values)
 
 		if path =='/developcenter/appView_giftcode.html':######################################
 			namespace_manager.set_namespace(appNamespace)
@@ -277,7 +294,9 @@ class DevelopCenterHandler(SessionBaseHandler):
 					count-=1
 			
 			values['msg']= "created giftcode category:"+self.request.get('category')+"<br> value:"+self.request.get('value')+"<br>"+ codelist
-			doRender(self,path,values)
+			
+			self.redirect(path+"?aID="+self.request.get('aID'))
+			#doRender(self,path,values)
 
 class ImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):

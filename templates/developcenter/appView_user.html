@@ -9,6 +9,8 @@
 				<td>nick</td>
 				<td>flag</td>
 				<td>udid</td>
+				<td>requests</td>
+				<td>lastConnect</td>
 				<td>joindate</td>
 			</tr>
 		{% for appuser in userList %}
@@ -17,6 +19,10 @@
 				<td>{{appuser.nick}}</td>
 				<td>{{appuser.flag}}</td>
 				<td>{{appuser.udid}}</td>
+				<td>{{appuser.requests}}</td>
+				<td>
+					{{appuser.lastDate}}
+				</td>
 				<td>
 					{{appuser.joinDate}}
 				</td>

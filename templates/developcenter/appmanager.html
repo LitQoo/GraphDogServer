@@ -16,4 +16,18 @@
 				</tr>
 			{% endfor %}
 		</table>
+
+		userlist
+		<table border=1>
+			{% for user in userList %}
+				<tr>
+					<td>{{user.nick}}</td>
+					<td>{{user.flag}}</td>
+					<td>{{user.udid}}</td>
+					<td>{{user.installs}}</td>
+					<td>{{user.mail}}</td>
+					<td>{{user.CPIEvents}}</td>
+				</tr>
+			{% endfor %}
+		</table>
 {% endblock %}

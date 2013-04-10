@@ -16,7 +16,7 @@ loglist
 		{% for log in logList %}
 			<tr>
 				<td>{{log.auInfo.id}}</td>
-				<td>{{log.text}}</td>
+				<td>{{log.text|safe}}</td>
 				<td>
 					{{log.time}}
 				</td>

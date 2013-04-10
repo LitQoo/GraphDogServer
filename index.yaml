@@ -27,6 +27,11 @@ indexes:
   - name: __key__
     direction: desc
 
+- kind: DB_AppLog
+  properties:
+  - name: __key__
+    direction: desc
+
 - kind: DB_AppMaxScore
   properties:
   - name: gType
@@ -73,11 +78,6 @@ indexes:
     direction: desc
 
 - kind: DB_AppUser
-  properties:
-  - name: __key__
-    direction: desc
-
-- kind: DB_AppLog
   properties:
   - name: __key__
     direction: desc

@@ -19,6 +19,7 @@ import base64
 import sys
 import logging
 import random
+import string
 from dbclass import *
 from SessionBaseHandler import *
 def convert(input):
@@ -165,7 +166,7 @@ class CommandHandler(SessionBaseHandler):
 			if auInfo and auInfo.createTime == tokens.get('createTime') and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
 				logging.info("user finded")
 				# name , flag update after check
-				if tokens.get('nick') and tokens.get('flag') and auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
+				if tokens.get('nick') and tokens.get('flag') and (auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag')):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
 					
 					namespace_manager.set_namespace(gdNamespace)
@@ -243,18 +244,38 @@ class CommandHandler(SessionBaseHandler):
 							if aID == cpi.get('eventAppID'):
 								logging.info('find cpi Event')
 								namespace_manager.set_namespace('APP_'+cpi.get('fromAppID'))
-								newRequest = DB_AppRequest()
-								newRequest.receiver = ndb.Key('DB_AppUser',int(cpi.get('fromAppUserID')))
-								newRequest.sender = aInfo.key
-								newRequest.category = 'cpiEvent'
-								newRequest.content = 'complete cpiEvent'
-								newRequest.put()
+								#newRequest = DB_AppRequest()
+								#newRequest.receiver = ndb.Key('DB_AppUser',int(cpi.get('fromAppUserID')))
+								#newRequest.sender = aInfo.key
+								#newRequest.category = 'cpiEvent'
+								#newRequest.content = 'complete cpiEvent'
+								#newRequest.userdata={"reward":cpi.get('reward'),"title":aInfo.title}
+								#newRequest.put()
+								
+								fromAppUserInfo = ndb.Key('DB_AppUser',int(cpi.get('fromAppUserID'))).get()
+								newRequest = {}
+								newRequest['rid'] = ''.join(random.choice(string.ascii_uppercase) for x in range(10))
+								newRequest['sender'] = {'type':'app','id':aInfo.key.id(),'name':aInfo.title}
+								newRequest['category'] = 'cpiEvent'
+								newRequest['content'] = 'complete cpiEvent'
+								newRequest['userdata']={"reward":cpi.get('reward')}
+
+								if type(fromAppUserInfo.requests)==list:
+									fromAppUserInfo.requests.append(newRequest)
+								else:
+									fromAppUserInfo.requests = [newRequest]
+
+								fromAppUserInfo.put()
+								logging.info('add cpirequest')
+								logging.info(newRequest)
+
 								namespace_manager.set_namespace(gdNamespace)
 								del uInfo.CPIEvents[i]
 								uInfo.put()
 								namespace_manager.set_namespace(appNamespace)
 
 								result['cpiEvent']=True
+								break;
 							i=i+1
 			else :
 				self.printError('authorise error',9999)
@@ -298,8 +319,6 @@ class CommandHandler(SessionBaseHandler):
 			if not gType:
 				gType = 'default'
 
-
-			gType = 'WORLDCUP'
 			logging.info('startscores')
 			#DB_AppScore.sTime==startTime
 			nowdate = datetime.date.today().strftime("%Y%m%d")
@@ -354,6 +373,10 @@ class CommandHandler(SessionBaseHandler):
 			if not gType:
 				gType = 'default'
 
+			if param.get('score'):
+				score = int(param.get('score'))
+			else:
+				score=0
 			
 			startTime = int(cTime)/sortValue*sortValue
 
@@ -362,7 +385,7 @@ class CommandHandler(SessionBaseHandler):
 			asInfo.sTime = startTime
 			asInfo.uTime = int(cTime)
 			asInfo.gType = gType
-			asInfo.score =  random.randrange(10,500) #int(param.get('score'))
+			asInfo.score =  score
 			asInfo.auInfo = auInfo.key
 			asInfo.flag = tokens.get('flag')
 			asInfo.nick = tokens.get('nick')
@@ -422,8 +445,7 @@ class CommandHandler(SessionBaseHandler):
 			if asInfo.isOver:
 				asInfo.eTime = cTime
 				logging.info(self.session.get('asID'))
-				self.session['asSortID']=''
-				self.session['asID']=''
+
 
 				#flag scores update
 				nowdate = datetime.date.today().strftime("%Y%m%d")
@@ -545,6 +567,8 @@ class CommandHandler(SessionBaseHandler):
 						result['list'].append(_new)
 						rank=rank+1
 			else:
+				#curs = Cursor(urlsafe=self.request.get('cursor'))
+    			#greets, next_curs, more = Greeting.query().fetch_page(10, start_cursor=curs)
 				scorelist = DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType)).order(-DB_AppScore.score).fetch(3)
 				scorelist += DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType)).order(-DB_AppScore.score).fetch(offset=result.get('myrank')-5,limit=7)
 
@@ -594,6 +618,11 @@ class CommandHandler(SessionBaseHandler):
 				
 			result['list'] = result['list'][:10]
 			result['state']='ok'
+
+			if asInfo.isOver:
+				self.session['asSortID']=''
+				self.session['asID']=''
+
 			asInfo.put()
 
 		if action == 'getmaxscores': ###############################################################################
@@ -701,7 +730,7 @@ class CommandHandler(SessionBaseHandler):
 		if action == 'getnotices': #######################################################################################
 			# param - lastNoticeID, 
 			#          limit = true, false
-			lastNoticeID = param.get('lastNoticeID')
+			lastNoticeID = param.get('lastnoticeid')
 			limit = param.get('limit')
 			if not limit:
 				limit = 10
@@ -723,24 +752,72 @@ class CommandHandler(SessionBaseHandler):
 		
 		if action == 'getrequests': #######################################################################################
 			limit = param.get('limit')
+			category = ['all','cpievent','notice','update','defalut']
+			if param.get('category'):
+				if type(param.get('category'))==list:
+					category = param.get('category')
+				elif type(param.get('category'))==str:
+					category = [param.get('category')]
+
 			if not limit:
 				limit = 10
-			rlist = DB_AppRequest.query(DB_AppRequest.receiver==auInfo.key).fetch(limit)
-			result['list']=[]
-			for request in rlist:
-				requestDict = {}
-				requestDict['id']=request.key.id()
-				requestDict['category']=request.category
-				requestDict['content']=request.content
-				requestDict['userdata']=json.loads(request.userdata)
-				result['list'].append(requestDict)
+			
+			if type(auInfo.requests) != list:
+				auInfo.requests=[]
+			
+			#rlist = DB_AppRequest.query(ndb.AND(DB_AppRequest.receiver==auInfo.key,DB_AppRequest.category.IN(category))).fetch(limit)
+			#for request in rlist:
+			#	requestDict = {}
+			#	requestDict['rid']=request.key.id()
+			#	requestDict['category']=request.category
+			#	requestDict['content']=request.content
+			#	requestDict['userdata']=json.loads(request.userdata)
+			#	requestDict['autoremove']=False
+			#	result['list'].append(requestDict)
+
+			platformlist = ['all',tokens.get('platform')]
+			
+			where = ndb.AND(DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(category))
+
+			if auInfo.lastNID:
+				where = ndb.AND(DB_AppNotice.key>auInfo.lastNID,DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(category))
+
+			nlist = DB_AppNotice.query(where).fetch(1)
+			
+			if nlist:
+				notice = nlist[0]
+				#auInfo.lastNID = notice.key
+
+				#여기에 조건(appversion, osversion) 검사 후 진짜 넘길지 말지 결정
+				requestDict={}
+				requestDict['rid']=notice.key.id()
+				requestDict['category']=notice.category
+				requestDict['content']=notice.content
+				requestDict['userdata']=notice.userdata
+				auInfo.requests.append(requestDict)
+				auInfo.put()
+
+				if notice.count:
+					notice.count+=1
+				else:
+					notice.count=1
+				notice.put()
+
+			if type(auInfo.requests) == list:
+				result['list']=auInfo.requests
+			else:
+				result['list']=[]
+
 			result['state']='ok'
 
 		if action == 'removerequest': #######################################################################################
-			request = DB_AppRequest.get_by_id(int(self.session.get('id')))
-			if request:
-				request.delete()
-			result['state']='ok'
+			rid = param.get('rid')
+			#request = DB_AppRequest.get_by_id(int(self.session.get('rid')))
+			#if request:
+			#	request.delete()
+			#	result['state']='ok'
+			#else:
+			#	result['state']='error'
 
 		if action == 'getcpilist': #######################################################################################
 			namespace_manager.set_namespace(gdNamespace)
@@ -749,51 +826,105 @@ class CommandHandler(SessionBaseHandler):
 				limit = 10
 			cpiList = DB_App.query(ndb.AND(DB_App.useCPI== True,DB_App.group==aInfo.group)).fetch(limit)
 			result['list']=[]
+
+			cpiReward = aInfo.cpiReward
+			user = auInfo.uInfo.get()
+
+			if type(cpiReward) != dict:
+				cpiReward = {'defalut':1000}
+
 			for cpi in cpiList:
+				logging.info(cpi.key.id())
+
 				if cpi.key.id() == aID:
+					logging.info('self app continue')
 					continue
+
+				# 1. 이미설치된 앱인가 검사
+				if cpi.key.id() in user.installs:
+					logging.info('installed app continue')
+					continue
+
+				# 2. cpievent 중인가 검사
+				iscping = False
+				if type(user.CPIEvents)==list:
+					for cping in user.CPIEvents:
+						if cping.get('eventAppID')==cpi.key.id():
+							iscping=True
+							break
+
+				if iscping:
+					logging.info('cping  app continue')
+					continue
+
+				logging.info('add cpievent')
 				cpidict = {}
 				cpidict['id']=cpi.key.id()
 				cpidict['title']=cpi.title
 				cpidict['bannerimg']=cpi.bannerImg
 				cpidict['iconimg']=cpi.iconImg
-
-				store = json.loads(cpi.store)
-				cpidict['store']=store.get(tokens.get('platform'))
-				
-				descripts = json.loads(cpi.descript)
-				descript = descripts.get(tokens.get('lang'))
-				if not descript:
-					descript = descripts.get('default')
-
+				cpidict['reward']=cpiReward.get(cpi.key.id(),cpiReward.get('default',1000))
+				cpidict['store']=cpi.store.get(tokens.get('platform'))
+				descript = cpi.descript.get(tokens.get('lang'),cpi.descript.get('default','no descript'))
 				cpidict['descript']=descript
 
 				result['list'].append(cpidict)
 			
 			namespace_manager.set_namespace(appNamespace)
 			
-			completeList = DB_AppRequest.query(ndb.AND(DB_AppRequest.receiver==auInfo.key,DB_AppRequest.category=='cpiEvent')).fetch()
-			
-			result['completelist']=[]
+			completeList = DB_AppRequest.query(ndb.AND(DB_AppRequest.receiver==auInfo.key,DB_AppRequest.category=='cpiEvent')).fetch(1)
+			if completeList:
+				result['reward']=True
+			else:
+				result['reward']=False
+			#result['completelist']=[]
 
-			for com in completeList:
-				_new = com.to_dict()
-				_new['id']=com.key.id()
-				del _new['receiver']
-				del _new['sender']
-				result['completelist'].append(_new)
+			#for com in completeList:
+			#	_new = com.to_dict()
+			#	_new['id']=com.key.id()
+			#	del _new['receiver']
+			#	del _new['sender']
+			#	result['completelist'].append(_new)
 
 			result['state']='ok'
 
 		if action == 'addcpievent': #######################################################################################
 			namespace_manager.set_namespace(gdNamespace)
+			
+			
 			cpiappid = param.get('aid')
+
+
 			user = auInfo.uInfo.get()
-			logging.info(user.CPIEvents)
-			newCpiEvent={'eventAppID':cpiappid,'fromAppID':aID,'fromAppUserID':auInfo.key.id()}
-			user.CPIEvents.append(newCpiEvent)
-			user.put()
+			
 			result['state']='ok'
+
+			# 1. 이미설치된 앱인가 검사
+			if cpiappid in user.installs:
+				result['state']='error'
+				result['msg']='installed'
+
+			# 2. cpievent 중인가 검사
+			if type(user.CPIEvents)==list:
+				for cpi in user.CPIEvents:
+					if cpi.get('eventAppID')==cpiappid:
+						result['state']='error'
+						result['msg']='ing event'
+						break;
+
+			
+			if result.get('state')!='error':
+				cpiReward=aInfo.cpiReward
+				reward = cpiReward.get(cpiappid,cpiReward.get('default',1000))
+				newCpiEvent={'eventAppID':cpiappid,'fromAppID':aID,'fromAppUserID':auInfo.key.id(),'reward':reward,'time':cTime}
+				if type(user.CPIEvents)==list:
+					user.CPIEvents.append(newCpiEvent)
+				else:
+					user.CPIEvents=[newCpiEvent];
+
+				user.put()
+				logging.info(newCpiEvent)
+
 			namespace_manager.set_namespace(appNamespace)
 
 		if action == 'usegiftcode':#######################################################################################
@@ -845,11 +976,24 @@ class CommandHandler(SessionBaseHandler):
 		if action == 'writelog':#######################################################################################
 			newlog = DB_AppLog()
 			newlog.text = param.get('log')
-			newlog.time = int(cTime)
 			newlog.auInfo = auInfo.key
 			newlog.put()
 			result['state']='ok'
+		
+		if action == 'setuserdata':#######################################################################################
+			if not type(param.get('userdata')):
+				result['state']='error'
+			else:
+				if type(auInfo.userdata)==dict:
+					auInfo.userdata.update(param.get('userdata'))
+				else:
+					auInfo.userdata = param.get('userdata')
+				auInfo.put()
+				result['state']='ok'
 
+		if action == 'getuserdata':#######################################################################################
+			result['userdata']=auInfo.userdata
+			result['state']='ok'
 
 		namespace_manager.set_namespace(appNamespace)
 		#결과리턴

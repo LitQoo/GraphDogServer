@@ -34,6 +34,9 @@
 		<td>useCPI</td>
 		<td><input type=checkbox value=true name=useCPI {% if aInfo.useCPI %} checked {% endif %}>
 			<br>
+			cpireward<br>
+			<textarea cols=30 rows=5 name='cpiReward' id='cpiReward'>{%if aInfo.cpiReward %}{{ aInfo.cpiReward|safe }}{%endif%}</textarea><br>
+			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=cpiReward&keyname=defalut&valuename=1000','jsoneditor','width=500 height=500 menubar=no status=no')">edit reward</a><br><br>
 			banner <input name=bannerImg id='bannerImg'  value="{%if aInfo.bannerImg %}{{ aInfo.bannerImg|safe }}{%endif%}"> (320x50)
 			<a href=# onclick="window.open('/developcenter/imageselector/?input=bannerImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
 

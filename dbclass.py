@@ -13,6 +13,7 @@ class DB_Developer(ndb.Model):
 	email = ndb.StringProperty()
 	name = ndb.StringProperty()
 	group = ndb.StringProperty()
+	test=ndb.JsonProperty()
 
 class DB_DeveloperGroup(ndb.Model):
 	name = ndb.StringProperty()
@@ -28,8 +29,9 @@ class DB_App(ndb.Model):
 	useCPI = ndb.BooleanProperty()
 	bannerImg = ndb.StringProperty()
 	iconImg=ndb.StringProperty()
-	store = ndb.JsonProperty()
-	descript = ndb.JsonProperty()
+	store = ndb.JsonProperty(default={"ios":"storeid","android":"storeid"})
+	descript = ndb.JsonProperty(default={"defalut":"descript"})
+	cpiReward = ndb.JsonProperty(default={"defalut":100})
 
 class DB_User(ndb.Model):
 	nick = ndb.StringProperty()
@@ -38,6 +40,7 @@ class DB_User(ndb.Model):
 	installs = ndb.StringProperty(repeated=True)
 	mail = ndb.StringProperty()
 	CPIEvents = ndb.JsonProperty(default = [])
+	joinDate = ndb.DateTimeProperty(auto_now_add=True)
 
 class DB_AppUser(ndb.Model):
 	nick = ndb.StringProperty()
@@ -47,12 +50,15 @@ class DB_AppUser(ndb.Model):
 	createTime = ndb.StringProperty()
 	udid = ndb.StringProperty()
 	userdata = ndb.JsonProperty()
-	joinDate = ndb.DateProperty(auto_now=True)
+	joinDate = ndb.DateTimeProperty(auto_now_add=True)
+	lastDate = ndb.DateTimeProperty(auto_now=True)
+	lastNID = ndb.KeyProperty()
+	requests = ndb.JsonProperty(default = [])
 
 class DB_AppLog(ndb.Model):
 	auInfo = ndb.KeyProperty(DB_AppUser)
 	text = ndb.StringProperty()
-	time = ndb.IntegerProperty()
+	time = ndb.DateTimeProperty(auto_now_add=True)
 
 class DB_AppScore(ndb.Model):
 	auInfo=ndb.KeyProperty(DB_AppUser)
@@ -144,10 +150,12 @@ class DB_AppWeeklyScore(ndb.Model):
 
 class DB_AppNotice(ndb.Model):
 	title=ndb.StringProperty()
+	category = ndb.StringProperty()
 	content = ndb.TextProperty()
 	userdata = ndb.JsonProperty()
 	platform = ndb.StringProperty()
 	createTime = ndb.IntegerProperty()
+	count = ndb.IntegerProperty()
 
 class DB_AppRequest(ndb.Model):
 	receiver = ndb.KeyProperty()

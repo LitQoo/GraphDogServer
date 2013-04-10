@@ -183,6 +183,8 @@
         <li>usegiftcode</li>
         <li>addmail</li>
         <li>writelog</li>
+        <li>getrequests</li>
+        <li>writelog</li>
       </ul>
       <ul></ul>
       <div class="row-fluid">
@@ -628,6 +630,11 @@
                     <td>apps info</td>
                     <td>array</td>
                   </tr>
+                  <tr>
+                    <td>reward</td>
+                    <td>is need reward</td>
+                    <td>bool</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -653,6 +660,11 @@
                     <td>title</td>
                     <td>scores</td>
                     <td>string</td>
+                  </tr>
+                  <tr>
+                    <td>reward</td>
+                    <td>reward</td>
+                    <td>*</td>
                   </tr>
                   <tr>
                     <td>bannerimg</td>
@@ -830,7 +842,7 @@
                 <tbody>
                   <tr>
                     <td>log</td>
-                    <td>log</td>
+                    <td>log&nbsp;</td>
                     <td>string</td>
                   </tr>
                 </tbody>
@@ -842,6 +854,130 @@
         </div>
       </div>
       <div class="row"></div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>getrequests</h3>
+          <div class="alert">get request list</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>limit</td>
+                    <td>limit</td>
+                    <td>int</td>
+                  </tr>
+                  <tr>
+                    <td>category</td>
+                    <td>category [cpievent,notice,housead,update,default,etc], defalut:all</td>
+                    <td>string or string array</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <span class="label">Return</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>list</td>
+                    <td>request list</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="row-fluid">
+                <div class="span8">
+                  <span class="label label-success">Return in list</span>
+                  <table class="table table-condensed table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Field name</th>
+                        <th>Descript</th>
+                        <th>Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>rid</td>
+                        <td>request id</td>
+                        <td>int</td>
+                      </tr>
+                      <tr>
+                        <td>category</td>
+                        <td>category</td>
+                        <td>string</td>
+                      </tr>
+                      <tr>
+                        <td>content</td>
+                        <td>content</td>
+                        <td>string</td>
+                      </tr>
+                      <tr>
+                        <td>userdata</td>
+                        <td>userdata</td>
+                        <td>dict</td>
+                      </tr>
+                      <tr>
+                        <td>autoremove</td>
+                        <td>if value is False, need remove use removerequest action</td>
+                        <td>bool</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row"></div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span11" style="margin-left:50px">
+          <h3>removerequest</h3>
+          <div class="alert">remove request</div>
+          <span class="label">Parameter</span>
+          <div class="row-fluid">
+            <div class="span8">
+              <table class="table table-condensed table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field name</th>
+                    <th>Descript</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>rid</td>
+                    <td>request id&nbsp;</td>
+                    <td>int</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row-fluid"></div>
+          <div class="row"></div>
+        </div>
+      </div>
     </div>
   </body>
 
