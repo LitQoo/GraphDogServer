@@ -268,6 +268,7 @@ class CommandHandler(SessionBaseHandler):
 								fromAppUserInfo.put()
 								logging.info('add cpirequest')
 								logging.info(newRequest)
+								logging.info(fromAppUserInfo.nick)
 
 								namespace_manager.set_namespace(gdNamespace)
 								del uInfo.CPIEvents[i]
