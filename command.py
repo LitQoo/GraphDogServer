@@ -166,15 +166,15 @@ class CommandHandler(SessionBaseHandler):
 			if auInfo and auInfo.createTime == tokens.get('createTime') and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
 				logging.info("user finded")
 				# name , flag update after check
-				if tokens.get('nick') and tokens.get('flag') and (auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag')):
+				if tokens.get('nick') and tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
-					
-					namespace_manager.set_namespace(gdNamespace)
-					uInfo=auInfo.uInfo.get()
-					uInfo.nick = auInfo.nick = tokens.get('nick')
-					uInfo.flag = auInfo.flag = tokens.get('flag')
-					uInfo.put()
-					namespace_manager.set_namespace(appNamespace)
+					if auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
+						namespace_manager.set_namespace(gdNamespace)
+						uInfo=auInfo.uInfo.get()
+						uInfo.nick = auInfo.nick = tokens.get('nick')
+						uInfo.flag = auInfo.flag = tokens.get('flag')
+						uInfo.put()
+						namespace_manager.set_namespace(appNamespace)
 				#createTime update
 				
 				auInfo.createTime=str(cTime)
