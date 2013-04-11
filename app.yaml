@@ -24,10 +24,15 @@ handlers:
 
 - url: /command
   script: command.app
+
+- url: /stats.*
+  script: google.appengine.ext.appstats.ui.app
   
 - url: /.*
   script: main.app
 
+builtins:
+- appstats: on
 
 libraries:
 - name: webapp2

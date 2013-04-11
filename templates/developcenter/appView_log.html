@@ -23,5 +23,10 @@ loglist
 			</tr>
 		{%endfor%}
 	</table>
+
+	{% if next_curs %}
+		<a href=/developcenter/appView_log.html?aID={{aID}}&cursor={{next_curs.urlsafe}}>next</a>
+	{% endif %}
+
 	{% endif %}
 {% endblock %}

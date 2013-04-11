@@ -42,7 +42,7 @@ from command import CommandHandler
 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-
+from google.appengine.datastore.datastore_query import Cursor
 #render function
 def doRender(handler,tname='index.html',values={}):
 	temp = os.path.join(
@@ -125,6 +125,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		aID = self.request.get('aID')
 		values['user']=user
+
+		localtime = time.asctime( time.localtime(time.time()) )
+		values['localtime'] = localtime
+
 		if aID:
 			gdNamespace = namespace_manager.get_namespace()
 			appNamespace = 'APP_'+aID
@@ -150,17 +154,25 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/appView_log.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['logList']=DB_AppLog.query().order(-DB_AppLog.time).fetch()
-
+			curs = Cursor(urlsafe=self.request.get('cursor'))
+			logList, next_curs, more=DB_AppLog.query().order(-DB_AppLog.time).fetch_page(30, start_cursor=curs)
+			values['logList'] = logList
+			values['next_curs'] = next_curs
+			values['more'] = more
+			
 		if path == '/developcenter/appView_giftcode.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			values['giftcodeList']=DB_AppGiftcode.query().order(-DB_AppGiftcode.createTime).fetch()
 
 		if path == '/developcenter/appView_rank.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['rankList']=DB_AppScore.query().order(-DB_AppScore.uTime).fetch()
-
-
+			curs = Cursor(urlsafe=self.request.get('cursor'))
+			rankList, next_curs, more=DB_AppScore.query().order(-DB_AppScore.uTime).fetch_page(30, start_cursor=curs)
+			values['rankList'] = rankList
+			values['next_curs'] = next_curs
+			values['more'] = more
+			logging.info(next_curs)
+			logging.info(more)
 		if doRender(self,path,values):
 			return
 
@@ -266,8 +278,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 			newNotice = DB_AppNotice()
 			newNotice.title=self.request.get('title')
 			newNotice.category=self.request.get('category')
-			newNotice.content=json.loads(self.request.get('content'))
-			newNotice.userdata=json.loads(self.request.get('userdata'))
+			if self.request.get('content'):
+				newNotice.content=json.loads(self.request.get('content'))
+			if self.request.get('userdata'):
+				newNotice.userdata=json.loads(self.request.get('userdata'))
 			newNotice.platform=self.request.get('platform')
 			newNotice.createTime = int(time.time())
 			newNotice.put()

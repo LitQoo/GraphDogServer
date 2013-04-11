@@ -20,6 +20,7 @@ import sys
 import logging
 import random
 import string
+import copy
 from dbclass import *
 from SessionBaseHandler import *
 def convert(input):
@@ -166,15 +167,15 @@ class CommandHandler(SessionBaseHandler):
 			if auInfo and auInfo.createTime == tokens.get('createTime') and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
 				logging.info("user finded")
 				# name , flag update after check
-				if tokens.get('nick') and tokens.get('flag'):
+				#if tokens.get('nick') and tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
-					if auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
-						namespace_manager.set_namespace(gdNamespace)
-						uInfo=auInfo.uInfo.get()
-						uInfo.nick = auInfo.nick = tokens.get('nick')
-						uInfo.flag = auInfo.flag = tokens.get('flag')
-						uInfo.put()
-						namespace_manager.set_namespace(appNamespace)
+				#	if auInfo.nick != tokens.get('nick') or auInfo.flag != tokens.get('flag'):
+				#		namespace_manager.set_namespace(gdNamespace)
+				#		uInfo=auInfo.uInfo.get()
+				#		uInfo.nick = auInfo.nick = tokens.get('nick')
+				#		uInfo.flag = auInfo.flag = tokens.get('flag')
+				#		uInfo.put()
+				#		namespace_manager.set_namespace(appNamespace)
 				#createTime update
 				
 				auInfo.createTime=str(cTime)
@@ -212,7 +213,7 @@ class CommandHandler(SessionBaseHandler):
 					logging.info("dont find uid by udid")
 					#join
 					namespace_manager.set_namespace(gdNamespace)
-					uInfo = DB_User();
+					uInfo = DB_User()
 					uInfo.nick = tokens.get('nick')
 					uInfo.flag = tokens.get('flag')
 					uInfo.udid = tokens.get('udid')
@@ -256,7 +257,7 @@ class CommandHandler(SessionBaseHandler):
 								newRequest = {}
 								newRequest['rid'] = ''.join(random.choice(string.ascii_uppercase) for x in range(10))
 								newRequest['sender'] = {'type':'app','id':aInfo.key.id(),'name':aInfo.title}
-								newRequest['category'] = 'cpiEvent'
+								newRequest['category'] = 'cpievent'
 								newRequest['content'] = 'complete cpiEvent'
 								newRequest['userdata']={"reward":cpi.get('reward')}
 
@@ -276,7 +277,7 @@ class CommandHandler(SessionBaseHandler):
 								namespace_manager.set_namespace(appNamespace)
 
 								result['cpiEvent']=True
-								break;
+								break
 							i=i+1
 			else :
 				self.printError('authorise error',9999)
@@ -285,8 +286,8 @@ class CommandHandler(SessionBaseHandler):
 
 
 			#return result
-			result['tokenUpdate']='ok';
-			result['state']='ok';
+			result['tokenUpdate']='ok'
+			result['state']='ok'
 			result['auID']=str(auInfo.key.id())
 			
 			self.session['aID']=aID
@@ -334,7 +335,7 @@ class CommandHandler(SessionBaseHandler):
 
 
 
-			#_list = [];
+			#_list = []
 			
 
 
@@ -343,7 +344,7 @@ class CommandHandler(SessionBaseHandler):
 			#else:
 			#	_list = DB_AppScore.query(DB_AppScore.gType==self.session.get('gType')).fetch(5)
 			
-			#alluser=0;
+			#alluser=0
 			#flags={}
 			#for _as in _list:
 			#	if not flags.get(_as.flag):
@@ -753,7 +754,12 @@ class CommandHandler(SessionBaseHandler):
 		
 		if action == 'getrequests': #######################################################################################
 			limit = param.get('limit')
-			category = ['all','cpievent','notice','update','defalut']
+			autoremove = False
+
+			if type(param.get('autoremove')) == bool:
+				autoremove = param.get('autoremove')
+			category = ['all','cpievent','notice','housead','update','defalut']
+			
 			if param.get('category'):
 				if type(param.get('category'))==list:
 					category = param.get('category')
@@ -784,10 +790,10 @@ class CommandHandler(SessionBaseHandler):
 				where = ndb.AND(DB_AppNotice.key>auInfo.lastNID,DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(category))
 
 			nlist = DB_AppNotice.query(where).fetch(1)
-			
-			if nlist:
-				notice = nlist[0]
-				#auInfo.lastNID = notice.key
+			logging.info(nlist)
+			for notice in nlist:
+				#notice = nlist[0]
+				auInfo.lastNID = notice.key
 
 				#여기에 조건(appversion, osversion) 검사 후 진짜 넘길지 말지 결정
 				requestDict={}
@@ -796,7 +802,9 @@ class CommandHandler(SessionBaseHandler):
 				requestDict['content']=notice.content
 				requestDict['userdata']=notice.userdata
 				auInfo.requests.append(requestDict)
-				auInfo.put()
+				
+				if autoremove==False:
+					auInfo.put()
 
 				if notice.count:
 					notice.count+=1
@@ -805,14 +813,42 @@ class CommandHandler(SessionBaseHandler):
 				notice.put()
 
 			if type(auInfo.requests) == list:
-				result['list']=auInfo.requests
+				
+				result['list']=copy.deepcopy(auInfo.requests)
+
+				if autoremove==True:
+					for request in auInfo.requests:
+						auInfo.requests.remove(request)
+					auInfo.put()
+				
 			else:
 				result['list']=[]
 
 			result['state']='ok'
 
 		if action == 'removerequest': #######################################################################################
-			rid = param.get('rid')
+			rids = []
+			if type(param.get('rid'))!=list:
+				rids = [param.get('rid')]
+			else:
+				rids = param.get('rid')
+
+			result['state']='error'
+			removecheck=False
+
+			for rid in rids:
+				for request in auInfo.requests:			
+					if request.get('rid')==rid:
+						auInfo.requests.remove(request)
+						removecheck = True
+						break
+
+			if removecheck==True:
+				auInfo.put()
+				result['state']='ok'
+				
+
+					
 			#request = DB_AppRequest.get_by_id(int(self.session.get('rid')))
 			#if request:
 			#	request.delete()
@@ -847,16 +883,16 @@ class CommandHandler(SessionBaseHandler):
 					continue
 
 				# 2. cpievent 중인가 검사
-				iscping = False
-				if type(user.CPIEvents)==list:
-					for cping in user.CPIEvents:
-						if cping.get('eventAppID')==cpi.key.id():
-							iscping=True
-							break
+				#iscping = False
+				#if type(user.CPIEvents)==list:
+				#	for cping in user.CPIEvents:
+				#		if cping.get('eventAppID')==cpi.key.id():
+				#			iscping=True
+				#			break
 
-				if iscping:
-					logging.info('cping  app continue')
-					continue
+				#if iscping:
+				#	logging.info('cping  app continue')
+				#	continue
 
 				logging.info('add cpievent')
 				cpidict = {}
@@ -873,9 +909,11 @@ class CommandHandler(SessionBaseHandler):
 			
 			namespace_manager.set_namespace(appNamespace)
 			
-			completeList = DB_AppRequest.query(ndb.AND(DB_AppRequest.receiver==auInfo.key,DB_AppRequest.category=='cpiEvent')).fetch(1)
-			if completeList:
-				result['reward']=True
+			if type(auInfo.requests)==list and len(auInfo.requests)>0:
+				for request in auInfo.requests:
+					if request.get('category')=='cpievent':
+						result['reward']=True
+						break
 			else:
 				result['reward']=False
 			#result['completelist']=[]
@@ -902,29 +940,27 @@ class CommandHandler(SessionBaseHandler):
 
 			# 1. 이미설치된 앱인가 검사
 			if cpiappid in user.installs:
-				result['state']='error'
-				result['msg']='installed'
+				self.printError('installs',660)
+				return
 
 			# 2. cpievent 중인가 검사
 			if type(user.CPIEvents)==list:
 				for cpi in user.CPIEvents:
 					if cpi.get('eventAppID')==cpiappid:
-						result['state']='error'
-						result['msg']='ing event'
-						break;
+						self.printError('ing event',670)
+						return
 
 			
-			if result.get('state')!='error':
-				cpiReward=aInfo.cpiReward
-				reward = cpiReward.get(cpiappid,cpiReward.get('default',1000))
-				newCpiEvent={'eventAppID':cpiappid,'fromAppID':aID,'fromAppUserID':auInfo.key.id(),'reward':reward,'time':cTime}
-				if type(user.CPIEvents)==list:
-					user.CPIEvents.append(newCpiEvent)
-				else:
-					user.CPIEvents=[newCpiEvent];
+			cpiReward=aInfo.cpiReward
+			reward = cpiReward.get(cpiappid,cpiReward.get('default',1000))
+			newCpiEvent={'eventAppID':cpiappid,'fromAppID':aID,'fromAppUserID':auInfo.key.id(),'reward':reward,'time':cTime}
+			if type(user.CPIEvents)==list:
+				user.CPIEvents.append(newCpiEvent)
+			else:
+				user.CPIEvents=[newCpiEvent]
 
-				user.put()
-				logging.info(newCpiEvent)
+			user.put()
+			logging.info(newCpiEvent)
 
 			namespace_manager.set_namespace(appNamespace)
 
@@ -943,7 +979,7 @@ class CommandHandler(SessionBaseHandler):
 					result['resultmsg']="this giftcode was used"
 
 				elif self.session.get('giftcodeTime'):
-					gifttime = cTime-int(self.session.get('giftcodeTime'));
+					gifttime = cTime-int(self.session.get('giftcodeTime'))
 
 
 			else:
@@ -1089,7 +1125,7 @@ class CommandHandler(SessionBaseHandler):
 		return token
 
 	def printError(self,msg,code):
-		re = {'state':'error', 'msg':msg, 'errorcode':code}
+		re = {'state':'ok','error':msg, 'errorcode':code}
 		self.response.write(json.dumps(re))
 
 config = {}

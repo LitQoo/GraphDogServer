@@ -29,5 +29,9 @@ userrank
 			</tr>
 		{%endfor%}
 	</table>
+
+	{% if next_curs %}
+		<a href=/developcenter/appView_rank.html?aID={{aID}}&cursor={{next_curs.urlsafe}}>next</a>
+	{% endif %}
 	{% endif %}
 {% endblock %}
