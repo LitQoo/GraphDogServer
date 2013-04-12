@@ -168,6 +168,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 			namespace_manager.set_namespace(appNamespace)
 			curs = Cursor(urlsafe=self.request.get('cursor'))
 			rankList, next_curs, more=DB_AppScore.query().order(-DB_AppScore.uTime).fetch_page(30, start_cursor=curs)
+
 			values['rankList'] = rankList
 			values['next_curs'] = next_curs
 			values['more'] = more
@@ -297,13 +298,15 @@ class DevelopCenterHandler(SessionBaseHandler):
 			while count is not 0 :
 				codelist = ''
 				code = DevelopCenterHandler.createGiftcode()
-				newNotice = DB_AppGiftcode.get_or_insert(code)
-				if not newNotice.value:
-					newNotice.category=self.request.get('category')
-					newNotice.value=int(self.request.get('value'))
-					newNotice.code=code
-					newNotice.createTime =int(time.time())
-					newNotice.put()
+				newGiftcode = DB_AppGiftcode.get_or_insert(code)
+				if not newGiftcode.value:
+					newGiftcode.category=self.request.get('category')
+					newGiftcode.value=int(self.request.get('value'))
+					newGiftcode.code=code
+					newGiftcode.createTime =int(time.time())
+					if self.request.get('userdata'):
+						newGiftcode.userdata = json.loads(self.request.get('userdata'))
+					newGiftcode.put()
 					codelist = codelist + code + ' <br>' 
 					count-=1
 			

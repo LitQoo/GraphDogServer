@@ -77,6 +77,12 @@ indexes:
   - name: score
     direction: desc
 
+- kind: DB_AppNotice
+  properties:
+  - name: category
+  - name: platform
+  - name: createTime
+
 - kind: DB_AppUser
   properties:
   - name: __key__

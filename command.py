@@ -23,6 +23,7 @@ import string
 import copy
 from dbclass import *
 from SessionBaseHandler import *
+
 def convert(input):
 	if isinstance(input, dict):
 	    return {convert(key): convert(value) for key, value in input.iteritems()}
@@ -438,10 +439,12 @@ class CommandHandler(SessionBaseHandler):
 			asInfo.isOver = bool(param.get('isover'))
 
 
-			if type(asInfo.userdata)==dict:
-				asInfo.userdata.update(userdata)
-			else:
-				asInfo.userdata = userdata
+
+			if userdata:
+				if type(asInfo.userdata)==dict:
+					asInfo.userdata.update(userdata)
+				else:
+					asInfo.userdata = userdata
 
 			# game over!!
 			if asInfo.isOver:
@@ -754,21 +757,28 @@ class CommandHandler(SessionBaseHandler):
 		
 		if action == 'getrequests': #######################################################################################
 			limit = param.get('limit')
+			category = param.get('category')
 			autoremove = False
 
 			if type(param.get('autoremove')) == bool:
 				autoremove = param.get('autoremove')
-			category = ['all','cpievent','notice','housead','update','defalut']
 			
-			if param.get('category'):
-				if type(param.get('category'))==list:
-					category = param.get('category')
-				elif type(param.get('category'))==str:
-					category = [param.get('category')]
+			categorys = ['all','cpievent','notice','housead','update','defalut']
+			
+			if category:
+				if type(category)==list:
+					logging.info('category is list')
+					categorys = category
+				elif category!='all':
+						categorys = [category]
+						logging.info('category is str')
+
 
 			if not limit:
 				limit = 10
 			
+			logging.info(categorys)
+
 			if type(auInfo.requests) != list:
 				auInfo.requests=[]
 			
@@ -784,17 +794,18 @@ class CommandHandler(SessionBaseHandler):
 
 			platformlist = ['all',tokens.get('platform')]
 			
-			where = ndb.AND(DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(category))
+			where = ndb.AND(DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(categorys))
 
 			if auInfo.lastNID:
-				where = ndb.AND(DB_AppNotice.key>auInfo.lastNID,DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(category))
+				where = ndb.AND(DB_AppNotice.createTime>auInfo.lastNID,DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(categorys))
 
 			nlist = DB_AppNotice.query(where).fetch(1)
 			logging.info(nlist)
+
+			auInfo.lastNID = cTime
+			auInfo.put()
 			for notice in nlist:
 				#notice = nlist[0]
-				auInfo.lastNID = notice.key
-
 				#여기에 조건(appversion, osversion) 검사 후 진짜 넘길지 말지 결정
 				requestDict={}
 				requestDict['rid']=notice.key.id()
@@ -802,8 +813,10 @@ class CommandHandler(SessionBaseHandler):
 				requestDict['content']=notice.content
 				requestDict['userdata']=notice.userdata
 				auInfo.requests.append(requestDict)
-				
-				if autoremove==False:
+				logging.info('add notice')
+				logging.info(requestDict)
+
+				if autoremove!=True:
 					auInfo.put()
 
 				if notice.count:
@@ -817,8 +830,10 @@ class CommandHandler(SessionBaseHandler):
 				result['list']=copy.deepcopy(auInfo.requests)
 
 				if autoremove==True:
+					logging.info('auto remove')
 					for request in auInfo.requests:
 						auInfo.requests.remove(request)
+						logging.info(request)
 					auInfo.put()
 				
 			else:
@@ -980,16 +995,16 @@ class CommandHandler(SessionBaseHandler):
 
 				elif self.session.get('giftcodeTime'):
 					gifttime = cTime-int(self.session.get('giftcodeTime'))
+					if gifttime < 3600:
+						result['resultcode']=870
+						result['resultmsg']="you don't use giftcode for 1H"
 
 
 			else:
 				result['resultcode']=880
 				result['resultmsg']="don't find giftcode"
 				
-				#if gifttime < 3600:
-				#	result['resultcode']=870
-				#	result['resultmsg']="you don't use giftcode for 1H"
-
+			
 			result['state']='ok'
 			if result.get('resultcode')==100:
 				result['category']=giftcode.category
