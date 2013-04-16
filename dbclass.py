@@ -628,7 +628,7 @@ class DB_AppVersions(ndb.Model):
 	version = ndb.IntegerProperty(default=0)
 	platform = ndb.StringProperty(default="")
 	createTime = ndb.DateTimeProperty(auto_now_add=True)
-
+	comment = ndb.StringProperty(default="")
 
 class DB_AppLog(ndb.Model):
 	auInfo = ndb.KeyProperty(DB_AppUser)

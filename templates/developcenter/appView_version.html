@@ -1,0 +1,29 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+		<table width=100% border=1>
+			<tr>
+				<td>version</td>
+				<td>platform</td>
+				<td>comment</td>
+				<td>time</td>
+			</tr>
+		{% for version in versionList %}
+			<tr>
+				<td>{{version.version}}</td>
+				<td>{{version.platform}}</td>
+				<td>{{version.comment}}</td>
+				<td>
+					{{version.createTime}}
+				</td>
+			</tr>
+		{%endfor%}
+	</table>
+	{% endif %}
+{% endblock %}

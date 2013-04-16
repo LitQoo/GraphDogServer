@@ -106,7 +106,14 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values['logouturl'] = users.create_logout_url("/developcenter")
 
 		if path == '/developcenter/test':
+			gdNamespace = namespace_manager.get_namespace()
+			appNamespace = 'APP_test'
 
+			namespace_manager.set_namespace(appNamespace)
+
+			testver = DB_AppVersions.get_or_insert('testid')
+			
+			self.response.write(testver.to_dict())
 
 			#if test.asid:
 			#	self.response.write(str(test.asid))
@@ -156,15 +163,18 @@ class DevelopCenterHandler(SessionBaseHandler):
 		if path == '/developcenter/appmanager.html':	####################################################################
 			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
 			values['userList'] = DB_User.query().fetch()
-
+		
+		if path == '/developcenter/appView_version.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['versionList']=DB_AppVersions.query().order(-DB_AppVersions.createTime).fetch()
 
 		if path == '/developcenter/appView_notice.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.key).fetch()
+			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch()
 
 		if path == '/developcenter/appView_user.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['userList']=DB_AppUser.query().order(-DB_AppUser.key).fetch()
+			values['userList']=DB_AppUser.query().order(-DB_AppUser.joinDate).fetch()
 
 		if path == '/developcenter/appView_log.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
