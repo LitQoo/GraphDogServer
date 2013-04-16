@@ -48,6 +48,12 @@ indexes:
   - name: __key__
     direction: desc
 
+- kind: DB_AppNotice
+  properties:
+  - name: category
+  - name: platform
+  - name: createTime
+
 - kind: DB_AppScore
   properties:
   - name: __key__
@@ -76,12 +82,6 @@ indexes:
   - name: sTime
   - name: score
     direction: desc
-
-- kind: DB_AppNotice
-  properties:
-  - name: category
-  - name: platform
-  - name: createTime
 
 - kind: DB_AppUser
   properties:

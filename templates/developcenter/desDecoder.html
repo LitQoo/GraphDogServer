@@ -1,0 +1,11 @@
+{% extends '_base.html' %}
+{% block bodycontent %}
+<form action="/developcenter/desDecoder.html" method=POST>
+	secretKey : <input name=sKey value={{sKey}}><br>
+	<textarea rows=10 cols=50 name=encodeTxt>{{encodeTxt}}</textarea>
+	->
+	<textarea rows=10 cols=50 name=decodeTxt>{{decodeTxt}}</textarea>
+	<br>
+	<input type=submit value="DES_dec(base64_dec(value))">
+</form>
+{% endblock %}

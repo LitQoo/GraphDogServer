@@ -105,12 +105,26 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values['loginurl'] = users.create_login_url("/developcenter")
 		values['logouturl'] = users.create_logout_url("/developcenter")
 
+		if path == '/developcenter/test':
+
+
+			#if test.asid:
+			#	self.response.write(str(test.asid))
+			#else:
+			#	self.response.write('none')
+
+			sqlClose()
+			return
 		if path == '/developcenter/index.html' or path == '/developcenter' or  path == '/developcenter/':
 			doRender(self,'/developcenter/index.html',values)
 			return
 			
 		if path == '/developcenter/reference.html':	####################################################################
 			doRender(self,'/developcenter/reference.html',values)
+			return
+
+		if path == '/developcenter/desDecoder.html':	####################################################################
+			doRender(self,'/developcenter/desDecoder.html',values)
 			return
 
 		if path == '/developcenter/jsoneditor.html':	####################################################################
@@ -156,6 +170,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 			namespace_manager.set_namespace(appNamespace)
 			curs = Cursor(urlsafe=self.request.get('cursor'))
 			logList, next_curs, more=DB_AppLog.query().order(-DB_AppLog.time).fetch_page(30, start_cursor=curs)
+			##logList = DB_AppLog.query().order(-DB_AppLog.time).fetch()
 			values['logList'] = logList
 			values['next_curs'] = next_curs
 			values['more'] = more
@@ -201,7 +216,26 @@ class DevelopCenterHandler(SessionBaseHandler):
 			self.response.write('check id')
 			return
 
-		
+		if path == '/developcenter/desDecoder.html':	####################################################################
+			sKey = self.request.get('sKey')
+			encodeTxt = self.request.get('encodeTxt')
+			encodeTxt=encodeTxt.replace(" ","+")
+			if encodeTxt:
+				to = base64.decodestring(encodeTxt)
+				if len(sKey)%8>0:
+					sKey = sKey + ' '*(8-len(sKey)%8)
+				if len(sKey)%8>0:
+					to = to + ' '*(8-len(to)%8)
+				obj = DES.new(sKey,DES.MODE_ECB)
+				decodetxt=obj.decrypt(to)
+
+				values['decodeTxt']=decodetxt
+				values['sKey']=sKey
+				values['encodeTxt']=encodeTxt
+
+			doRender(self,'/developcenter/desDecoder.html',values)
+			return
+
 		if path == '/developcenter/createapp.html':#########################################
 			namespace_manager.set_namespace(gdNamespace)
 			newApp = ndb.Key('DB_App',self.request.get('aID')).get()
@@ -216,11 +250,18 @@ class DevelopCenterHandler(SessionBaseHandler):
 			#newApp.scoresSortType = self.request.get('scoresSortType')
 			newApp.scoresSortValue = int(self.request.get('scoresSortValue'))
 			newApp.developer = developer.key
+			newApp.dbInstance = CLOUDSQL_INSTANCE
+
 			try:
 				newApp.put()
 			except Exception, e:
-				self.response.write('error : change aID ')
+				self.response.write('error : change aID')
 				return
+
+			createDatabaseAndConnect(aid=newApp.aID)
+			DB_AppScores.createTable()
+			DB_AppWeeklyScores.createTable()
+			DB_AppMaxScores.createTable()
 			
 			self.response.write('<a href=appmanager.html>appmanager</a>')
 		if path == '/developcenter/appView.html': #####################################
