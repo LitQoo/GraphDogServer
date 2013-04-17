@@ -19,11 +19,17 @@ handlers:
   static_files: static/images/.*\.png
   upload: static/images/.*\.png
 
-- url: /command/.*
-  script: command.app
+- url: /command/1/.*
+  script: command1.app
+
+- url: /command/2/.*
+  script: command2.app
 
 - url: /command
-  script: command.app
+  script: command0.app
+
+- url: /command/.*
+  script: command0.app
 
 - url: /stats.*
   script: google.appengine.ext.appstats.ui.app

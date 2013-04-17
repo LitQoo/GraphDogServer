@@ -403,6 +403,8 @@ class CommandHandler(SessionBaseHandler):
 			#######################################################
 			asInfo2 = DB_AppScores()
 			asInfo2.auInfo = auInfo.key.id()
+			asInfo2.sTime = int(cTime)
+			asInfo2.uTime = int(cTime)
 			asInfo2.gType = gType
 			asInfo2.score = score
 			asInfo2.flag = tokens.get('flag')
@@ -488,7 +490,7 @@ class CommandHandler(SessionBaseHandler):
 			# game over!!
 			if asInfo2.isOver:
 				##asInfo.eTime = cTime
-				asInfo2.eTime = cTime
+				asInfo2.eTime = int(cTime)
 				logging.info(self.session.get('asID'))
 
 				#flag scores update

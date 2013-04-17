@@ -12,9 +12,9 @@
 			<textarea row=10 cols=30 name=userdata id=userdata>{{notice.userdata|safe}}</textarea> <br>
 			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=userdata&keyname=key&valuename=value','jsoneditor','width=500 height=500 menubar=no status=no')">edit userdata</a>
 			platform:<select name=platform>
-				<option value=all>all</option>
 				<option value=ios>ios</option>
 				<option value=android>android</option>
+				<option value=all>all</option>
 			</select><br>
 			<input type=submit value='save'>
 </form>
@@ -33,6 +33,7 @@
 				<td>userdata</td>
 				<td>platform</td>
 				<td>time</td>
+				<td>hit</td>
 			</tr>
 		{% for notice in noticeList %}
 			<tr>
@@ -44,6 +45,9 @@
 				<td>{{notice.platform}}</td>
 				<td>
 					{{notice.createTime}}
+				</td>
+				<td>
+					{{notice.count}}
 				</td>
 			</tr>
 		{%endfor%}

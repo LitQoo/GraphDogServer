@@ -38,7 +38,7 @@ import random
 import string
 from dbclass import *
 from SessionBaseHandler import *
-from command import CommandHandler
+from command1 import CommandHandler
 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers

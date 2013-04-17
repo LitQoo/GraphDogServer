@@ -581,7 +581,6 @@ class DB_Developer(ndb.Model):
 	email = ndb.StringProperty()
 	name = ndb.StringProperty()
 	group = ndb.StringProperty()
-	test=ndb.JsonProperty()
 
 class DB_DeveloperGroup(ndb.Model):
 	name = ndb.StringProperty()
