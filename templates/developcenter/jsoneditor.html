@@ -21,16 +21,47 @@
 				i=0
 				for(key in values){
 					i++;
-					$(InputsWrapper).append('<div><input type="text" name="key[]" id="key_'+i+'" value="'+key+'"/>\n'+
-			            	'<input type="text" name="value[]" id="value_'+i+'" value="'+values[key]+'"/>\n'+
-			            	'<a href="#" class="removeclass">x</a></div>');
+
+
+					row = '<div>'
+					row +='<input type="text" name="key[]" id="key_'+i+'" value="'+key+'"/>\n'+
+			            	'<input type="text" name="value[]" id="value_'+i+'" value="'+values[key]+'"/>\n'
+			            	
+			        row+='<select name="datatype[]" id="datatype_'+i+'">'
+			   		row+='<option value="'+typeof(values[key])+'">'+typeof(values[key])+'</option>'
+			   		
+
+			   		row+='<option value="string">string</option>'
+			   		row+='<option value="number">number</option>'
+			   		row+='<option value="boolean">boolean</option>'
+			   		row+='<option value="object">object</option>'
+			   		row+='</select>'
+			        row +=' <a href="#" class="removeclass">x</a>'
+			        row +='</div>'
+
+					$(InputsWrapper).append(row);
 					FieldCount++;
 					x++;
 				}
 			}else{
-				$(InputsWrapper).append('<div><input type="text" name="key[]" id="key_1" value="{{keyname}}"/>\n'+
-		            	'<input type="text" name="value[]" id="value_1" value="{{valuename}}"/>\n'+
-		            	'<a href="#" class="removeclass">x</a></div>');
+
+					i=1
+					key=""
+					row = '<div>'
+					row +='<input type="text" name="key[]" id="key_'+i+'" value="key"/>\n'+
+			            	'<input type="text" name="value[]" id="value_'+i+'" value="value"/>\n'
+			            	
+			        row+='<select name="datatype[]" id="datatype_'+i+'">'
+			   		row+='<option value="string">string</option>'
+			   		row+='<option value="number">number</option>'
+			   		row+='<option value="boolean">boolean</option>'
+			   		row+='<option value="object">object</option>'
+			   		row+='</select>'
+			   		row +=' <a href="#" class="removeclass">x</a>'
+			        row +='</div>'
+			        
+
+				$(InputsWrapper).append(row);
 			}
 
 		
@@ -40,9 +71,20 @@
 		        {
 		            FieldCount++; //text box added increment
 		            //add input box
-		            $(InputsWrapper).append('<div><input type="text" name="key[]" id="key_'+ FieldCount +'" value="{{keyname}}"/>\n'+
-		            	'<input type="text" name="value[]" id="value_'+ FieldCount +'" value="{{valuename}}"/>\n'+
-		            	'<a href="#" class="removeclass">x</a></div>');
+		            row = '<div>'
+					row +='<input type="text" name="key[]" id="key_'+FieldCount+'" value="key"/>\n'+
+			            	'<input type="text" name="value[]" id="value_'+FieldCount+'" value="value"/>\n'
+			            	
+			        row+='<select name="datatype[]" id="datatype_'+FieldCount+'">'
+			   		row+='<option value="string">string</option>'
+			   		row+='<option value="number">number</option>'
+			   		row+='<option value="boolean">boolean</option>'
+			   		row+='<option value="object">object</option>'
+			   		row+='</select>'
+			   		row +=' <a href="#" class="removeclass">x</a>'
+			        row +='</div>'
+
+		            $(InputsWrapper).append(row);
 		            x++; //text box increment
 		        }
 			return false;
@@ -64,8 +106,16 @@
 				var dict= {};
 				for(i=1;i<=FieldCount;i++){
 					if(typeof $("#key_"+i).val()=="undefined")continue;
+					datatype = $("#datatype_"+i).val();
 					key = $("#key_"+i).val();
-					dict[key]=$("#value_"+i).val();
+					if (datatype=='number')
+						dict[key]=Number($("#value_"+i).val());
+					else if(datatype=='string')
+						dict[key]=String($("#value_"+i).val());
+					else if(datatype=='boolean')
+						dict[key]=eval($("#value_"+i).val());
+					else if(datatype=='object')
+						dict[key]=eval($("#value_"+i).val());
 				}
 				
 				// obj to string JSON.stringify(myObj);

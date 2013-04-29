@@ -1,0 +1,35 @@
+<html>
+	<head>
+		<title>Developer Center</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script src="jsonForm.js"></script>
+		<style type="text/css">
+		div {border:#000 solid 1px; padding:5px;width-left:auto;}
+		</style>
+		<script>
+			$(document).ready(function(){
+				$('#jbtn').click(function(){
+					console.log($('[name="hszz"]').val())
+					$('[name="hszz"]').val('first value')
+				})
+
+				$('#testDiv').append('<textarea id="testText" name="hszz">hello</textarea>')
+
+				$('#testText').change(function(e){
+					console.log('change testText:'+$(this).val())
+				})
+			})
+		</script>
+	</head>
+	<body>
+
+<div id='testDiv'></div>
+<form action='jsonForm.html' method='post'>
+<div id='testtesttest' class='jsonForm' value='{"key":"value","key2":"value","asdf":{"aaa":"bbb","ccc":[1,2,3,4,5],"":""}}'></div>
+
+	<input name='input1' value='222'>
+	<input type='button' value='check' id='jbtn'>
+	<input type='submit'>
+</form>
+	</body>
+</html>

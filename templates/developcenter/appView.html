@@ -1,6 +1,65 @@
 {% extends 'appView_base.html' %}
 {% block editor %}
-welcome to appView
+
+<form action=appView.html method=post>
+<table align=center border=1>
+	<tr>
+		<td colspan="2">AppInfo</td>
+	</tr>
+	<tr>
+		<td>title</td>
+		<td><input name=title value="{{ aInfo.title|safe }}"></td>
+	</tr>
+	<tr>
+		<td>aID</td>
+		<td><input name=aID value="{{ aInfo.aID|safe }}" readonly> (a~Z a~z 0~9)</td>
+	</tr>
+	<tr>
+		<td>group</td>
+		<td><input name=group value="{{ aInfo.group|safe }}"></td>
+	</tr>
+	<tr>
+		<td>secretKey</td>
+		<td><input name=secretKey value="{{ aInfo.secretKey|safe }}"></td>
+	</tr>
+
+	<tr>
+		<td>scoresSortValue</td>
+		<td><input name=scoresSortValue  value="{{ aInfo.scoresSortValue|safe }}"></td>
+	</tr>
+	<tr>
+		<td>useCPI</td>
+		<td><input type=checkbox value=true name=useCPI {% if aInfo.useCPI %} checked {% endif %}>
+			<br>
+			cpiReward<br>
+			<div id='cpiReward' class='jsonForm' value='{% if aInfo.cpiReward %} {{aInfo.cpiReward|safe}} {% endif %}'></div>
+			<br><br>
+			banner <input name=bannerImg id='bannerImg'  value="{%if aInfo.bannerImg %}{{ aInfo.bannerImg|safe }}{%endif%}"> (320x50)
+			<a href=# onclick="window.open('/developcenter/imageselector/?input=bannerImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
+
+			<br><br>
+			icon <input name=iconImg  id='iconImg' value="{%if aInfo.iconImg %}{{ aInfo.iconImg|safe }}{%endif%}"> (50x50)
+			<a href=# onclick="window.open('/developcenter/imageselector/?input=iconImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
+			<br><br>
+			store infomation<br>
+			<div id='store' class='jsonForm' value='{% if aInfo.store %} {{aInfo.store|safe}} {% endif %}'></div>
+
+			<br><br>
+			descript<br>
+			<div id='descript' class='jsonForm' value='{% if aInfo.descript %} {{aInfo.descript|safe}} {% endif %}'></div>
+
+
+		</td>
+	</tr>
+
+
+	<tr>
+		<td colspan="2" align=center>
+			<input type=submit value="save">
+		</td>
+	</tr>
+</table>
+</form>
 {% endblock %}
 
 {% block list %}{% endblock %}

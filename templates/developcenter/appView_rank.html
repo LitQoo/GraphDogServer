@@ -31,7 +31,7 @@ userrank
 	</table>
 
 	{% if next_curs %}
-		<a href=/developcenter/appView_rank.html?aID={{aID}}&cursor={{next_curs.urlsafe}}>next</a>
+		<a href=/developcenter/appView_rank.html?aID={{aID}}&cursor={{next_curs.urlsafe}}&limit={{limit}}>next</a>
 	{% endif %}
 	{% endif %}
 {% endblock %}

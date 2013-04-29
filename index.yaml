@@ -32,15 +32,16 @@ indexes:
   - name: __key__
     direction: desc
 
-- kind: DB_AppMaxScore
+- kind: DB_AppLog
   properties:
-  - name: gType
-  - name: score
+  - name: auInfo
+  - name: time
+    direction: desc
 
-- kind: DB_AppMaxScore
+- kind: DB_AppLog
   properties:
-  - name: gType
-  - name: score
+  - name: category
+  - name: time
     direction: desc
 
 - kind: DB_AppNotice
@@ -53,35 +54,6 @@ indexes:
   - name: category
   - name: platform
   - name: createTime
-
-- kind: DB_AppScore
-  properties:
-  - name: __key__
-    direction: desc
-
-- kind: DB_AppScore
-  properties:
-  - name: gType
-  - name: sTime
-  - name: score
-
-- kind: DB_AppScore
-  properties:
-  - name: gType
-  - name: sTime
-  - name: score
-    direction: desc
-
-- kind: DB_AppScore
-  properties:
-  - name: sTime
-  - name: score
-
-- kind: DB_AppScore
-  properties:
-  - name: sTime
-  - name: score
-    direction: desc
 
 - kind: DB_AppUser
   properties:

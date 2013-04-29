@@ -3,7 +3,7 @@
 
 	{% if developer_email %}
 		hello! {{ developer_nickname }} ( {{ developer_email }} )<br>
-		<a href=developcenter/appmanager.html>AppManager</a> <br>
+		<a href=developcenter/appmanager.html>AppManager</a> <br><br>
 		<a href={{ logouturl }}>logout</a>
 	{% else %}
 		<a href={{ loginurl }}>login With Google</a>

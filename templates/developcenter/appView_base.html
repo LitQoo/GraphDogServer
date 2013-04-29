@@ -4,77 +4,20 @@
 
 <table border=1>
 	<tr><td>
-<table align=center border=1>
-	<form action="appView.html" method=post>
-	<tr>
-		<td colspan="2">AppInfo </td>
-	</tr>
-	<tr>
-		<td>title</td>
-		<td><input name=title value="{{ aInfo.title|safe }}"></td>
-	</tr>
-	<tr>
-		<td>aID</td>
-		<td><input name=aID value="{{ aInfo.aID|safe }}" readonly> (a~Z a~z 0~9)</td>
-	</tr>
-		<tr>
-		<td>group</td>
-		<td><input name=group value="{{ aInfo.group|safe }}"></td>
-	</tr>
-	<tr>
-		<td>secretKey</td>
-		<td><input name=secretKey value="{{ aInfo.secretKey|safe }}"></td>
-	</tr>
-
-	<tr>
-		<td>scoresSortValue</td>
-		<td><input name=scoresSortValue  value="{{ aInfo.scoresSortValue|safe }}"></td>
-	</tr>
-	<tr>
-		<td>useCPI</td>
-		<td><input type=checkbox value=true name=useCPI {% if aInfo.useCPI %} checked {% endif %}>
-			<br>
-			cpireward<br>
-			<textarea cols=30 rows=5 name='cpiReward' id='cpiReward'>{%if aInfo.cpiReward %}{{ aInfo.cpiReward|safe }}{%endif%}</textarea><br>
-			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=cpiReward&keyname=defalut&valuename=1000','jsoneditor','width=500 height=500 menubar=no status=no')">edit reward</a><br><br>
-			banner <input name=bannerImg id='bannerImg'  value="{%if aInfo.bannerImg %}{{ aInfo.bannerImg|safe }}{%endif%}"> (320x50)
-			<a href=# onclick="window.open('/developcenter/imageselector/?input=bannerImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
-
-			<br><br>
-			icon <input name=iconImg  id='iconImg' value="{%if aInfo.iconImg %}{{ aInfo.iconImg|safe }}{%endif%}"> (50x50)
-			<a href=# onclick="window.open('/developcenter/imageselector/?input=iconImg','imageselector','width=500 height=500 menubar=no status=no')"> select</a>
-			<br><br>
-			store infomation<br>
-			<textarea cols=30 rows=5 name='store' id='store'>{%if aInfo.store %}{{ aInfo.store|safe }}{%endif%}</textarea><br>
-			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=store&keyname=platform&valuename=storeid','jsoneditor','width=500 height=500 menubar=no status=no')">edit store infomation</a>
-			<br><br>
-			descript<br>
-			<textarea cols=30 rows=5 name='descript' id='descript'>{%if aInfo.descript %}{{ aInfo.descript|safe }}{%endif%}</textarea><br>
-			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=descript&keyname=language&valuename=descript','jsoneditor','width=500 height=500 menubar=no status=no')">edit descript infomation</a>
-		</td>
-	</tr>
-
-
-		<tr>
-		<td colspan="2" align=center>
-			<a href=appmanager.html>back</a>
-			<input type=submit value="save">
-		</td>
-	</tr>
-	</form>
-</table>
+			{{aID}} <a href=appmanager.html>back</a>
 		</td>
 	</td></tr>
 	<tr><td>
-		<table border=1><tr><td>
-			<a href=appView_notice.html?aID={{aID}}>request</a>
+		<table border=1><tr>
+			<td><a href=appView.html?aID={{aID}}>info</a></td>
+			<td><a href=appView_notice.html?aID={{aID}}>request</a></td>
 			<td><a href=appView_explorer.html?aID={{aID}}>explorer</a></td>
 			<td><a href=appView_user.html?aID={{aID}}>user</a></td>
 			<td><a href=appView_giftcode.html?aID={{aID}}>giftcode</a></td>
 			<td><a href=appView_rank.html?aID={{aID}}>rank</a></td>
 			<td><a href=appView_log.html?aID={{aID}}>log</a></td>
 			<td><a href=appView_version.html?aID={{aID}}>version</a></td>
-			
+			<td><a href=appView_stats.html?aID={{aID}}>stats</a></td>
 			</tr></table>
 	</td></tr>
 	<tr><td>

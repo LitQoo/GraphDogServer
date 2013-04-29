@@ -10,7 +10,8 @@
 
 			$("body").on("click",".selectImage", function(e){ //user click on remove text
 		        $(opener.document).find("#{{ input }}").val($(this).prop('src'));
-		        window.close()
+		        $(opener.document).find("#{{ input }}").change();
+		        window.close();
 				return false;
 			}) 
 

@@ -25,15 +25,21 @@ handlers:
 - url: /command/2/.*
   script: command2.app
 
+- url: /command/3/.*
+  script: command3.app
+
+- url: /command/4/.*
+  script: command4.app
+
 - url: /command
   script: command0.app
 
 - url: /command/.*
   script: command0.app
 
-- url: /stats.*
-  script: google.appengine.ext.appstats.ui.app
-  
+#- url: /stats.*
+#  script: google.appengine.ext.appstats.ui.app
+
 - url: /.*
   script: main.app
 

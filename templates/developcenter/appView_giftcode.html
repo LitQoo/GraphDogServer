@@ -7,8 +7,9 @@ create giftcode
 			value:<input type=text name=value value={{giftcode.value|safe}}><br>
 			count : <input type=text name=count value=1> <br>
 			userdata<br>
-			<textarea row=10 cols=30 name=userdata id=userdata>{{giftcode.userdata|safe}}</textarea> <br>
-			<a href=# onclick="window.open('/developcenter/jsoneditor.html?input=userdata&keyname=key&valuename=value','jsoneditor','width=500 height=500 menubar=no status=no')">edit userdata</a>
+			<div id='userdata' class='jsonForm' value='{}'></div>
+
+			
 			<input type=submit value='save'>
 </form>
 {% endblock %}
@@ -22,6 +23,7 @@ create giftcode
 				<td>code</td>
 				<td>category</td>
 				<td>value</td>
+				<td>userdata</td>
 				<td>createTime</td>
 				<td>user</td>
 				<td>useTime</td>

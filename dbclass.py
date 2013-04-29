@@ -6,6 +6,8 @@ from google.appengine.api import rdbms
 import time
 import json
 import logging
+from google.appengine.api import memcache
+import datetime
 
 CLOUDSQL_INSTANCE = 'graphdogserver:graphdog'
 CLOUDSQL_CONNECTION = None
@@ -580,26 +582,37 @@ class DB_AppWeeklyScores():
 class DB_Developer(ndb.Model):
 	email = ndb.StringProperty()
 	name = ndb.StringProperty()
-	group = ndb.StringProperty()
+	group = ndb.StringProperty(default="")
 
 class DB_DeveloperGroup(ndb.Model):
 	name = ndb.StringProperty()
 
 class DB_App(ndb.Model):
 	aID = ndb.StringProperty()
-	group = ndb.StringProperty()
-	title = ndb.StringProperty()
-	secretKey = ndb.StringProperty()
+	group = ndb.StringProperty(default="")
+	title = ndb.StringProperty(default="")
+	secretKey = ndb.StringProperty(default="ABCDEFGH")
 	#scoresSortType = ndb.StringProperty()
-	scoresSortValue = ndb.IntegerProperty()
+	scoresSortValue = ndb.IntegerProperty(default=100)
 	developer = ndb.KeyProperty()
-	useCPI = ndb.BooleanProperty()
-	bannerImg = ndb.StringProperty()
-	iconImg=ndb.StringProperty()
+	useCPI = ndb.BooleanProperty(default=False)
+	bannerImg = ndb.StringProperty(default="")
+	iconImg=ndb.StringProperty(default="")
 	store = ndb.JsonProperty(default={"ios":"storeid","android":"storeid"})
 	descript = ndb.JsonProperty(default={"default":"descript"})
 	cpiReward = ndb.JsonProperty(default={"default":100})
 	dbInstance= ndb.StringProperty(default=CLOUDSQL_INSTANCE)
+	isPutOn = False
+
+	def putOn(self):
+		logging.info('putOn')
+		self.isPutOn = True
+
+	def doPut(self):
+		logging.info('doPut')
+		if self.isPutOn==True:
+			logging.info('doPut complete')
+			self.put()
 
 class DB_User(ndb.Model):
 	nick = ndb.StringProperty()
@@ -622,6 +635,19 @@ class DB_AppUser(ndb.Model):
 	lastDate = ndb.DateTimeProperty(auto_now=True)
 	lastNID = ndb.IntegerProperty(default = 0)
 	requests = ndb.JsonProperty(default = [])
+	isPutOn = False
+
+	def putOn(self):
+		logging.info('putOn')
+		self.isPutOn = True
+
+	def doPut(self):
+		logging.info('doPut')
+		if self.isPutOn==True:
+			logging.info('doPut complete')
+			self.put()
+
+
 
 class DB_AppVersions(ndb.Model):
 	version = ndb.IntegerProperty(default=0)
@@ -629,8 +655,48 @@ class DB_AppVersions(ndb.Model):
 	createTime = ndb.DateTimeProperty(auto_now_add=True)
 	comment = ndb.StringProperty(default="")
 
+class DB_AppStats(ndb.Model):
+	category = ndb.StringProperty(default="")
+	year = ndb.IntegerProperty()
+	month = ndb.IntegerProperty()
+	day = ndb.IntegerProperty()
+	statsData = ndb.JsonProperty(default={})
+
+	@staticmethod
+	def getInMC():
+		today = datetime.date.today().strftime("%Y%m%d")
+		data = memcache.get("stats")		
+		when = memcache.get("stats_when")
+		if not when:
+			when = today
+
+		if not data:
+			data = {'hit':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'install':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'update':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'country':{'en':0,'kr':0},'platform':{'ios':0,'android':0}}
+
+		if today != when:
+			#데이터저장 when꺼를들고오기~~
+			stats = DB_AppStats.get_or_insert("stats_"+when)
+			stats.year = int(when[0:3])
+			stats.month = int(when[4:5])
+			stats.day = int(when[6:7])
+			stats.statsData = data
+			stats.put()
+			#새값생성
+			newdata={'hit':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'install':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'update':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'country':{'en':0,'kr':0},'platform':{'ios':0,'android':0}}
+			DB_AppStats.setInMC(newdata)
+			return newdata
+
+		return data
+
+	@staticmethod
+	def setInMC(data):
+		today = datetime.date.today().strftime("%Y%m%d")
+		memcache.set("stats",data,60*60*24*2)
+		memcache.set("stats_when",today,60*60*24*2)
+
 class DB_AppLog(ndb.Model):
 	auInfo = ndb.KeyProperty(DB_AppUser)
+	category = ndb.StringProperty()
 	text = ndb.StringProperty()
 	time = ndb.DateTimeProperty(auto_now_add=True)
 
@@ -731,32 +797,32 @@ class DB_AppWeeklyScore(ndb.Model):
 		return _new
 
 class DB_AppNotice(ndb.Model):
-	title=ndb.StringProperty()
-	category = ndb.StringProperty()
-	content = ndb.TextProperty()
-	userdata = ndb.JsonProperty()
-	platform = ndb.StringProperty()
-	createTime = ndb.IntegerProperty()
-	count = ndb.IntegerProperty()
+	title=ndb.StringProperty(default="")
+	category = ndb.StringProperty(default="")
+	content = ndb.JsonProperty(default={})
+	userdata = ndb.JsonProperty(default={})
+	platform = ndb.StringProperty(default="")
+	createTime = ndb.IntegerProperty(default=0)
+	count = ndb.IntegerProperty(default=0)
 
 class DB_AppRequest(ndb.Model):
 	receiver = ndb.KeyProperty()
 	sender = ndb.KeyProperty()
-	category = ndb.StringProperty()
-	content = ndb.StringProperty()
+	category = ndb.StringProperty(default="")
+	content = ndb.StringProperty(default="")
 	userdata = ndb.JsonProperty(default={})
 
 class DB_AppGiftcode(ndb.Model):
-	code = ndb.StringProperty()
-	category = ndb.StringProperty()
-	value = ndb.IntegerProperty()
+	code = ndb.StringProperty(default="")
+	category = ndb.StringProperty(default="")
+	value = ndb.IntegerProperty(default=0)
 	user = ndb.KeyProperty()
 	createTime = ndb.IntegerProperty()
-	useTime = ndb.IntegerProperty()
+	useTime = ndb.IntegerProperty(default=0)
 	userdata = ndb.JsonProperty(default={})
 
 class DB_AppImage(ndb.Model):
-	imageName = ndb.StringProperty()
+	imageName = ndb.StringProperty(default="")
 	developer = ndb.UserProperty()
 	imgurl=""
 	

@@ -26,6 +26,8 @@ import urllib
 from google.appengine.ext import ndb
 from Crypto.Cipher import DES
 from Crypto.Hash import MD5
+from Crypto import Random
+
 from google.appengine.api import users
 from google.appengine.api import namespace_manager
 import json
@@ -43,6 +45,8 @@ from command1 import CommandHandler
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.datastore.datastore_query import Cursor
+from google.appengine.api import memcache
+
 #render function
 def doRender(handler,tname='index.html',values={}):
 	temp = os.path.join(
@@ -88,6 +92,8 @@ class DevelopCenterHandler(SessionBaseHandler):
 		developer={}
 		logging.info('get start')
 		
+		if path == '/developcenter/test':
+			return
 
 		if user:
 			developer=ndb.Key('DB_Developer',user.email()).get()
@@ -105,23 +111,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values['loginurl'] = users.create_login_url("/developcenter")
 		values['logouturl'] = users.create_logout_url("/developcenter")
 
-		if path == '/developcenter/test':
-			gdNamespace = namespace_manager.get_namespace()
-			appNamespace = 'APP_test'
 
-			namespace_manager.set_namespace(appNamespace)
-
-			testver = DB_AppVersions.get_or_insert('testid')
-			
-			self.response.write(testver.to_dict())
-
-			#if test.asid:
-			#	self.response.write(str(test.asid))
-			#else:
-			#	self.response.write('none')
-
-			sqlClose()
-			return
 		if path == '/developcenter/index.html' or path == '/developcenter' or  path == '/developcenter/':
 			doRender(self,'/developcenter/index.html',values)
 			return
@@ -132,6 +122,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/desDecoder.html':	####################################################################
 			doRender(self,'/developcenter/desDecoder.html',values)
+			return
+
+		if path == '/developcenter/jsonForm.html':	####################################################################
+			doRender(self,'/developcenter/jsonForm.html',values)
 			return
 
 		if path == '/developcenter/jsoneditor.html':	####################################################################
@@ -162,7 +156,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/appmanager.html':	####################################################################
 			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
-			values['userList'] = DB_User.query().fetch()
+			values['userList'] = DB_User.query().fetch(30)
 		
 		if path == '/developcenter/appView_version.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
@@ -171,19 +165,54 @@ class DevelopCenterHandler(SessionBaseHandler):
 		if path == '/developcenter/appView_notice.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch()
+		
+		if path == '/developcenter/appView_notice.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch()
 
 		if path == '/developcenter/appView_user.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['userList']=DB_AppUser.query().order(-DB_AppUser.joinDate).fetch()
+			curs = Cursor(urlsafe=self.request.get('cursor'))
+			limit = self.request.get('limit')
+			if not limit:
+				limit=30
+			else:
+				limit=int(limit)
+
+			userList, next_curs, more= DB_AppUser.query().order(-DB_AppUser.joinDate).fetch_page(limit, start_cursor=curs)
+			values['userList'] = userList
+			values['next_curs'] = next_curs
+			values['more'] = more
+			values['limit'] = limit
 
 		if path == '/developcenter/appView_log.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			curs = Cursor(urlsafe=self.request.get('cursor'))
-			logList, next_curs, more=DB_AppLog.query().order(-DB_AppLog.time).fetch_page(30, start_cursor=curs)
+			auser = self.request.get('auser')
+			category = self.request.get('category')
+			limit = self.request.get('limit')
+			if not limit:
+				limit=30
+			else:
+				limit=int(limit)
+
+			if auser:
+				auserkey = DB_AppUser.get_by_id(int(auser)) #ndb.Key('DB_AppUser',auser).get()
+				values['auInfo']=auserkey
+				logging.info(auserkey)
+				logList, next_curs, more=DB_AppLog.query(DB_AppLog.auInfo==auserkey.key).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+			elif category:
+				values['category']=category
+				logList, next_curs, more=DB_AppLog.query(DB_AppLog.category==category).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+			else:
+				logList, next_curs, more=DB_AppLog.query().order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+			
 			##logList = DB_AppLog.query().order(-DB_AppLog.time).fetch()
+			values['auser']=auser
 			values['logList'] = logList
 			values['next_curs'] = next_curs
 			values['more'] = more
+			values['limit'] = limit
 			
 		if path == '/developcenter/appView_giftcode.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
@@ -192,15 +221,42 @@ class DevelopCenterHandler(SessionBaseHandler):
 		if path == '/developcenter/appView_rank.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			curs = Cursor(urlsafe=self.request.get('cursor'))
-			rankList, next_curs, more=DB_AppScore.query().order(-DB_AppScore.uTime).fetch_page(30, start_cursor=curs)
+			limit = self.request.get('limit')
+			if not limit:
+				limit=30
+			else:
+				limit=int(limit)
+
+			rankList, next_curs, more=DB_AppScore.query().order(-DB_AppScore.uTime).fetch_page(limit, start_cursor=curs)
 
 			values['rankList'] = rankList
 			values['next_curs'] = next_curs
 			values['more'] = more
+			values['limit'] = limit
 			logging.info(next_curs)
 			logging.info(more)
+
+
+		if path == '/developcenter/appView_stats.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			
+			stats = DB_AppStats.getInMC()
+			text = "<table border=1><tr><td></td>"
+			for num in range(0,24):
+				text+="<td>"+str(num)+"</td>"
+			text+="</tr><tr><td>install</td>"
+			for num in range(0,24):
+				text+="<td>"+str(stats['install'][num])+"</td>"
+			text+="</tr><tr><td>hit</td>"
+			for num in range(0,24):
+				text+="<td>"+str(stats['hit'][num])+"</td>"
+			text+="</tr></table>"
+			self.response.write(text)
+			values['today']=datetime.datetime.now().hour
+
 		if doRender(self,path,values):
 			return
+
 
    		#doRender(self,'developcenter/index.html',values)
 	def post(self):
@@ -226,28 +282,84 @@ class DevelopCenterHandler(SessionBaseHandler):
 			self.response.write('check id')
 			return
 
+		if path == '/developcenter/jsonForm.html':#########################################
+			logging.info('jsonForm test ####################################')
+			logging.info(self.request)
+			self.response.write(self.request)
+			logging.info('jsonForm test ####################################')
+			doRender(self,'/developcenter/jsonForm.html',values)
+			return
 		if path == '/developcenter/desDecoder.html':	####################################################################
 			sKey = self.request.get('sKey')
-			encodeTxt = self.request.get('encodeTxt')
-			encodeTxt=encodeTxt.replace(" ","+")
-			if encodeTxt:
-				to = base64.decodestring(encodeTxt)
-				if len(sKey)%8>0:
-					sKey = sKey + ' '*(8-len(sKey)%8)
-				if len(sKey)%8>0:
-					to = to + ' '*(8-len(to)%8)
-				obj = DES.new(sKey,DES.MODE_ECB)
-				decodetxt=obj.decrypt(to)
+			crytMode = self.request.get('crytMode')
+			mode = self.request.get('mode')
+			logging.info(mode)
+			if mode == 'decode':
+				logging.info('decode')
+				encodeTxt = self.request.get('fromTxt')
+				encodeTxt= encodeTxt.replace(" ","+")
+				if encodeTxt:
+					to = base64.decodestring(encodeTxt)
+					logging.info("base64 decode")
+					logging.info(to)
+					sKey=sKey.ljust(8,' ')
 
-				values['decodeTxt']=decodetxt
-				values['sKey']=sKey
-				values['encodeTxt']=encodeTxt
+					if len(to)%8>0:
+						to = to + ' '*(8-len(to)%8)
+					logging.info(to)
+
+					if crytMode=='ECB':
+						logging.info('ECBMODE')
+						obj = DES.new(sKey,DES.MODE_ECB)
+					elif crytMode=='CBC':
+						logging.info('CBCMODE')
+						iv = '12345678'
+						obj = DES.new(sKey,DES.MODE_CBC,iv)
+					else:
+						obj = DES.new(sKey,DES.MODE_ECB)
+					
+					decodetxt=obj.decrypt(to)
+
+					values['toTxt']=decodetxt
+					values['sKey']=sKey
+					values['fromTxt']=encodeTxt
+			else:
+				logging.info('encode')
+				encodeTxt = self.request.get('fromTxt')
+				encodeTxt= encodeTxt.replace(" ","+")
+				if encodeTxt:
+					to = encodeTxt
+					logging.info("base64 decode")
+					logging.info(to)
+					sKey=sKey.ljust(8,' ')
+					
+					if len(to)%8>0:
+						to = to + ' '*(8-len(to)%8)
+
+					logging.info(to)
+
+					if crytMode=='ECB':
+						logging.info('ECBMODE')
+						obj = DES.new(sKey,DES.MODE_ECB)
+					elif crytMode=='CBC':
+						logging.info('CBCMODE')
+						iv = '12345678'
+						obj = DES.new(sKey,DES.MODE_CBC,iv)
+					else:
+						obj = DES.new(sKey,DES.MODE_ECB)
+					
+					decodetxt=obj.encrypt(to)
+					decodetxt=base64.encodestring(decodetxt)
+					values['toTxt']=decodetxt
+					values['sKey']=sKey
+					values['fromTxt']=encodeTxt
 
 			doRender(self,'/developcenter/desDecoder.html',values)
 			return
 
 		if path == '/developcenter/createapp.html':#########################################
 			namespace_manager.set_namespace(gdNamespace)
+
 			newApp = ndb.Key('DB_App',self.request.get('aID')).get()
 			if not newApp:
 				newApp = DB_App(id=self.request.get('aID'))
@@ -278,6 +390,8 @@ class DevelopCenterHandler(SessionBaseHandler):
 			if not aInfo:
 				self.response.write('check aID')
 				return
+			logging.info(self.request)
+			logging.info(self.request.get('store'))
 			namespace_manager.set_namespace(gdNamespace)
 			aInfo.title = self.request.get('title')
 			aInfo.group = self.request.get('group')
@@ -333,6 +447,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 			if self.request.get('content'):
 				newNotice.content=json.loads(self.request.get('content'))
 			if self.request.get('userdata'):
+				logging.info(self.request.get('userdata'))
 				newNotice.userdata=json.loads(self.request.get('userdata'))
 			newNotice.platform=self.request.get('platform')
 			newNotice.createTime = int(time.time())

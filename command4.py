@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
+#
+#	무조건 끝에 #추가
+#	통계추가 appstats
+#
+#
+#
+
 import os
 import webapp2
 from google.appengine.ext import webapp
@@ -23,6 +30,8 @@ import copy
 from dbclass import *
 from SessionBaseHandler import *
 
+
+
 class CommandHandler(SessionBaseHandler):
 	def post(self):
 		
@@ -33,8 +42,6 @@ class CommandHandler(SessionBaseHandler):
 
 		token = self.request.get('token')
 		version = self.request.get('appver')
-		commands = CommandHandler.decParam(self.request.get('command'))
-		logging.info(commands)
 		path = self.request.path
 		pathArray = path.split("/")
 		aID = pathArray[3]
@@ -54,14 +61,22 @@ class CommandHandler(SessionBaseHandler):
 		try:
 			aInfo = DB_App.get_by_id(aID)
 		except Exception, e:
-			self.printError("dont find app1",100)
+			self.printError("dont find app1",100,aInfo.secretKey)
 			return
 
 		if not aInfo:
-			self.printError('dont find app2' + aID,100)
+			self.printError('dont find app2' + aID,100,aInfo.secretKey)
 			return
 		
-		#dec token
+		#dec token & commands
+		cmdtext = self.request.get('command')
+		cmdtext = CommandHandler.DesInBase64ToStr(cmdtext,aInfo.secretKey)
+		cmdtext = cmdtext.replace('\x00','')
+		commands = {}
+		if cmdtext:
+			commands = json.loads(cmdtext) #decParam(self.request.get('command'))
+		
+		logging.info(commands)
 		tokens = CommandHandler.decToken(token,aInfo.secretKey)
 
 		namespace_manager.set_namespace(appNamespace)
@@ -72,8 +87,6 @@ class CommandHandler(SessionBaseHandler):
 		logging.info(self.session)
 		logging.info(self.session.get('aID'))
 
-		
-		
 		allresult = {'timestamp':int(cTime),'createTime':str(cTime), 'version':version, 'state':'ok'}	
 
 		#result = {'timestamp':int(cTime),'createTime':str(cTime), 'version':version}
@@ -104,8 +117,16 @@ class CommandHandler(SessionBaseHandler):
 					pass
 
 			#auID존재여부확인 , ctime check && uuid check  and appuser.createTime == tokens.get('createTime')
-			if auInfo and auInfo.createTime == tokens.get('createTime') and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
+			# and auInfo.createTime == tokens.get('createTime')
+			if auInfo and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
 				logging.info("user finded")
+				stats = DB_AppStats.getInMC()
+				hour = int(datetime.datetime.now().hour)
+				try:
+					stats['hit'][hour]+=1
+				except KeyError:
+					stats['hit'][hour]=1
+				DB_AppStats.setInMC(stats)
 				# name , flag update after check
 				#if tokens.get('nick') and tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
@@ -119,7 +140,7 @@ class CommandHandler(SessionBaseHandler):
 				#createTime update
 				
 				auInfo.createTime=str(cTime)
-				auInfo.put()
+				auInfo.putOn()
 
 				#weekly pint update after check!##############################
 				
@@ -169,13 +190,20 @@ class CommandHandler(SessionBaseHandler):
 					auInfo.uInfo = uInfo.key
 					auInfo.put()
 
-					#update installs
+
 					namespace_manager.set_namespace(gdNamespace)
 					uInfo.installs.append(aID)
 					uInfo.put()
 					namespace_manager.set_namespace(appNamespace)
 					allresult['isFirst']=True
 					
+					stats = DB_AppStats.getInMC()
+					hour = int(datetime.datetime.now().hour)
+					try:
+						stats['install'][hour]+=1
+					except KeyError:
+						stats['install'][hour]=1
+					DB_AppStats.setInMC(stats)
 
 					#cpiEvents check get
 					if len(uInfo.CPIEvents)>0:
@@ -220,7 +248,7 @@ class CommandHandler(SessionBaseHandler):
 								break
 							i=i+1
 			else :
-				self.printError('authorise error',9999)
+				self.printError('authorise error11',9999,aInfo.secretKey)
 				logging.info(tokens.get('createTime'))
 				return
 
@@ -239,9 +267,8 @@ class CommandHandler(SessionBaseHandler):
 			logging.info('session cTime:'+str(cTime))
 			auInfo.createTime=str(cTime)
 			tokens['createTime']=str(cTime)
-			auInfo.put()
 			logging.info(json.dumps(allresult))
-			self.response.write(json.dumps(allresult))
+			self.response.write(CommandHandler.strToDesInBase64(json.dumps(allresult),aInfo.secretKey).strip()+"#")
 			return
 
 
@@ -253,13 +280,14 @@ class CommandHandler(SessionBaseHandler):
 
 		#login check
 		if not self.session.get('aID') or not self.session.get('auID'):
-			self.printError('error',100)
+			self.printError('error',100,aInfo.secretKey)
 			return
 
 		#token check
 		if tokens.get('createTime')!=auInfo.createTime:
-			self.printError('token Error',9999)
-			return
+			logging.info("####################### cTime ERROR #############################")
+			#self.printError('token Error',9999,aInfo.secretKey)
+			#return
 
 
 
@@ -986,7 +1014,7 @@ class CommandHandler(SessionBaseHandler):
 						notice.count=1
 					notice.put()
 					
-				if type(auInfo.requests) == list:
+				if type(auInfo.requests) == list and len(auInfo.requests)>0:
 					logging.info('auto remove')
 					resultList = []
 					for request in auInfo.requests:
@@ -997,7 +1025,7 @@ class CommandHandler(SessionBaseHandler):
 								auInfo.requests.remove(request)
 								logging.info(request)
 					
-					auInfo.put()
+					auInfo.putOn()
 					result['list']=resultList
 				else:
 					result['list']=[]
@@ -1022,7 +1050,7 @@ class CommandHandler(SessionBaseHandler):
 							break
 
 				if removecheck==True:
-					auInfo.put()
+					auInfo.putOn()
 					result['state']='ok'
 					
 
@@ -1186,11 +1214,15 @@ class CommandHandler(SessionBaseHandler):
 
 				result['state']='ok'
 				auInfo.mail = param.get('mail')
-				auInfo.put()
+				auInfo.putOn()
 
 			if 'writelog' in actions:#######################################################################################
 				newlog = DB_AppLog()
+				category = param.get('category')
+				if not category:
+					category = 'defalut'
 				newlog.text = param.get('log')
+				newlog.category = category
 				newlog.auInfo = auInfo.key
 				newlog.put()
 				result['state']='ok'
@@ -1203,7 +1235,7 @@ class CommandHandler(SessionBaseHandler):
 						auInfo.userdata.update(param.get('userdata'))
 					else:
 						auInfo.userdata = param.get('userdata')
-					auInfo.put()
+					auInfo.putOn()
 					result['state']='ok'
 
 			if 'getuserdata' in actions:#######################################################################################
@@ -1215,9 +1247,14 @@ class CommandHandler(SessionBaseHandler):
 			result.clear()
 			logging.info('########################### end command ###############################')
 		namespace_manager.set_namespace(appNamespace)
+		#put
+		auInfo.doPut()
+		#uInfo.doPut()
 		#결과리턴
 		resultStr = json.dumps(allresult,encoding="utf-8",ensure_ascii=False)
-		self.response.write(resultStr)
+		logging.info("version 4")
+		resultStr = CommandHandler.strToDesInBase64(resultStr,aInfo.secretKey)
+		self.response.write(resultStr.strip()+"#")
 		logging.info(resultStr)
 		
 	
@@ -1240,8 +1277,39 @@ class CommandHandler(SessionBaseHandler):
 		return re
 	
 	@classmethod
-	def encParam(cls,paramstr):
-		re = base64.encodestring(paramstr)
+	def strToDesInBase64(cls,text,skey):
+		logging.info("str to desinbase64")
+		logging.info("text type is")
+		logging.info(type(text))
+
+		obj = DES.new(skey,DES.MODE_ECB)
+		
+		if type(text) == unicode:	
+			text = text.encode('utf-8')
+
+		if len(text)%8>0:
+			text = text + ' '*(8-len(text)%8)
+
+		text=obj.encrypt(text)
+
+		text=base64.b64encode(text)
+		return text
+
+	@classmethod
+	def DesInBase64ToStr(cls,text,skey):
+		logging.info("desinbase64 to str "+skey)
+		text=text.replace(" ","+")
+		logging.info(text)
+		logging.info('repr')
+		logging.info(repr(text))
+		text=base64.b64decode(text)
+		obj = DES.new(skey,DES.MODE_ECB)
+		rStr=obj.decrypt(text)
+		return rStr
+
+	@classmethod	
+	def encParam(cls,paramstr,skey):
+		re = cls.DesInBase64ToStr(paramstr,skey) #base64.encodestring(paramstr)
 		re = re.decode('utf-8')
 		return re
 
@@ -1250,7 +1318,7 @@ class CommandHandler(SessionBaseHandler):
 		re={}
 		try:
 			token=token.replace(" ","+")
-			to = base64.decodestring(token)
+			to = base64.b64decode(token)
 			#to = to.decode('uft-8')
 			#logging.info('decToken type')
 			#logging.info(str(type(to)))
@@ -1293,12 +1361,15 @@ class CommandHandler(SessionBaseHandler):
 		
 		obj = DES.new(skey,DES.MODE_ECB)
 		token = obj.encrypt(token)
-		token = base64.encodestring(token)
+		token = base64.b64encode(token)
 		return token
 
-	def printError(self,msg,code):
+	def printError(self,msg,code,skey):
+		logging.info("print error"+msg)
+		logging.info("print error"+str(code))
 		re = {'state':'ok','error':msg, 'errorcode':code}
-		self.response.write(json.dumps(re))
+		text = CommandHandler.strToDesInBase64(json.dumps(re),skey)
+		self.response.write(text.strip()+"#")
 
 	def createError(self,msg,code):
 		re = {'state':'ok','error':msg, 'errorcode':code}

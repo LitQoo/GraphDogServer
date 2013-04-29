@@ -895,13 +895,21 @@ class CommandHandler(SessionBaseHandler):
 		if action == 'getrequests': #######################################################################################
 			limit = param.get('limit')
 			category = param.get('category')
-			autoremove = False
+			categorys = ['all','cpievent','notice','housead','update','defalut']
+			autoremoves=[]
 
 			if type(param.get('autoremove')) == bool:
 				autoremove = param.get('autoremove')
+				if autoremove==True:
+					autoremoves=['all','cpievent','notice','housead','update','defalut']
+				else:
+					autoremoves = []
+			elif type(param.get('autoremove')) == str:
+				autoremoves = [param.get('autoremove')]
+			elif type(param.get('autoremove')) == list:
+				autoremoves = param.get('autoremove')
 			
-			categorys = ['all','cpievent','notice','housead','update','defalut']
-			
+
 			if category:
 				if type(category)==list:
 					logging.info('category is list')
@@ -941,7 +949,6 @@ class CommandHandler(SessionBaseHandler):
 
 			if nlist:
 				auInfo.lastNID = cTime
-				auInfo.put()
 
 			for notice in nlist:
 				#notice = nlist[0]
@@ -961,21 +968,19 @@ class CommandHandler(SessionBaseHandler):
 					notice.count=1
 				notice.put()
 				
-			if nlist and autoremove!=True:
-				auInfo.put()
-
 			if type(auInfo.requests) == list:
-				
-				result['list']=copy.deepcopy(auInfo.requests)
+				logging.info('auto remove')
+				resultList = []
+				for request in auInfo.requests:
+					if request.get('category') in categorys:
+						resultList.append(copy.deepcopy(request))
 
-				if autoremove==True:
-					logging.info('auto remove')
-					for request in auInfo.requests:
-						if request.get('category')==category:
+						if request.get('category') in autoremoves:
 							auInfo.requests.remove(request)
 							logging.info(request)
-					auInfo.put()
 				
+				auInfo.put()
+				result['list']=resultList
 			else:
 				result['list']=[]
 
