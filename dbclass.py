@@ -10,36 +10,26 @@ from google.appengine.api import memcache
 import datetime
 
 CLOUDSQL_INSTANCE = 'graphdogserver:graphdog'
-CLOUDSQL_CONNECTION = None
+CLOUDSQL_DBNAME = None
 
-def sqlConnect(aid=None,dbname=None,instance=None):
-	global CLOUDSQL_CONNECTION
+def setSqlConnect(aid=None,dbname=None,instance=None):
 	global CLOUDSQL_INSTANCE
-	logging.info('connect sql')
+	global CLOUDSQL_DBNAME
 
 	if aid:
-		dbname = 'APP_'+aid
-	if not instance:
-		instance = CLOUDSQL_INSTANCE
+		CLOUDSQL_DBNAME = 'APP_'+aid
 
-	if not CLOUDSQL_CONNECTION:
-		CLOUDSQL_CONNECTION=rdbms.connect(instance=instance, database=dbname, charset='utf8')
-		if CLOUDSQL_CONNECTION:
-			logging.info('connect sql ok')
-		else:
-			logging.info('connect sql failed')
+	if dbname:
+		CLOUDSQL_DBNAME = dbname
+	
+	if instance:
+		CLOUDSQL_INSTANCE = instance
 
-	return CLOUDSQL_CONNECTION
+def sqlConnect(aid=None,dbname=None,instance=None):
+	setSqlConnect(aid,dbname,instance)
+	return rdbms.connect(instance=CLOUDSQL_INSTANCE, database=CLOUDSQL_DBNAME, charset='utf8')
 
-def sqlClose():
-	global CLOUDSQL_CONNECTION
-	logging.info('close sql')
-	if CLOUDSQL_CONNECTION:
-		CLOUDSQL_CONNECTION.close()
-		CLOUDSQL_CONNECTION=None
-		logging.info('close ok')
-
-def createDatabaseAndConnect(aid=None,dbname=None):
+def createDatabaseAndConnect(aid=None,dbname=None,instance=None):
 		conn =sqlConnect(dbname='graphdog')
 		cursor = conn.cursor()
 
@@ -49,11 +39,10 @@ def createDatabaseAndConnect(aid=None,dbname=None):
 		query = """create database %s charset utf8;"""%dbname
 		cursor.execute(query)
 		createQuery = conn.commit()
-		logging.info(createQuery)
-		
-		sqlClose()
+		#logging.info('commit sql')
+		conn.close()
 
-		return sqlConnect(dbname=dbname)
+		setSqlConnect(dbname=dbname,instance=instance)
 
 
 
@@ -105,7 +94,7 @@ class DB_AppScores():
 
 		cursor.execute(query)
 		createQuery = conn.commit()
-		logging.info(createQuery)
+		conn.close()
 
 	@staticmethod
 	def get(findID=None):
@@ -114,6 +103,7 @@ class DB_AppScores():
 		query = 'SELECT no, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppScore WHERE no=%s' % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		return DB_AppScores.set(row)
 
 	@staticmethod
@@ -123,6 +113,7 @@ class DB_AppScores():
 		query = 'SELECT no, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppScore WHERE no=%s' % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		if row:
 			return DB_AppScores.set(row)
 		else:
@@ -140,6 +131,7 @@ class DB_AppScores():
 
 		cursor.execute(query)
 		rows = cursor.fetchall()
+		conn.close()
 		return rows
 
 	@staticmethod
@@ -152,6 +144,7 @@ class DB_AppScores():
 
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		return row[0]
 	
 	@staticmethod
@@ -191,9 +184,10 @@ class DB_AppScores():
 							))
 			conn.commit()
 
+			cursor = conn.cursor()
 			cursor.execute('SELECT LAST_INSERT_ID() FROM AppScore')
 			row = cursor.fetchone()
-			logging.info(row)
+			conn.close()
 			if row:
 				self.asid=row[0]
 
@@ -214,6 +208,7 @@ class DB_AppScores():
 					self.asid
 				))
 			conn.commit()
+			conn.close()
 
 	def to_dict(self):
 		_new = {}
@@ -274,7 +269,7 @@ class DB_AppMaxScores():
 				"""
 		cursor.execute(query)
 		createQuery = conn.commit()
-		logging.info(createQuery)
+		conn.close()
 
 	@staticmethod
 	def get(findID=None):
@@ -283,6 +278,7 @@ class DB_AppMaxScores():
 		query = "SELECT no,amsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppMaxScore WHERE amsid='%s'" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		return DB_AppMaxScores.set(row)
 
 	@staticmethod
@@ -292,6 +288,7 @@ class DB_AppMaxScores():
 		query = "SELECT no,amsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppMaxScore WHERE amsid='%s'" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		if row:
 			return DB_AppMaxScores.set(row)
 		else:
@@ -309,6 +306,7 @@ class DB_AppMaxScores():
 
 		cursor.execute(query)
 		rows = cursor.fetchall()
+		conn.close()
 		return rows
 
 	@staticmethod
@@ -316,11 +314,13 @@ class DB_AppMaxScores():
 		conn = sqlConnect()
 		cursor = conn.cursor()
 		query = 'SELECT COUNT(no) FROM AppMaxScore'
+
 		if where:
 			query=query+' '+where
 
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		return row[0]
 	
 	@staticmethod
@@ -359,11 +359,11 @@ class DB_AppMaxScores():
 							'VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s)',
 							(self.amsid,self.auInfo,self.nick,self.flag,self.sTime,self.uTime,self.eTime,self.gType,self.score,json.dumps(self.userdata,encoding="utf-8",ensure_ascii=False)
 							))
+			
 			conn.commit()
-
 			cursor.execute('SELECT LAST_INSERT_ID() FROM AppMaxScore')
 			row = cursor.fetchone()
-			logging.info(row)
+			conn.close()
 			if row:
 				self.no=row[0]
 
@@ -383,7 +383,9 @@ class DB_AppMaxScores():
 					json.dumps(self.userdata,encoding="utf-8",ensure_ascii=False),
 					self.no
 				))
+
 			conn.commit()
+			conn.close()
 
 	def to_dict(self):
 		_new = {}
@@ -447,8 +449,8 @@ class DB_AppWeeklyScores():
 				"""
 		cursor.execute(query)
 		createQuery = conn.commit()
-		logging.info(createQuery)
-
+		conn.close()
+		
 	@staticmethod
 	def get(findID=None):
 		conn = sqlConnect()
@@ -456,6 +458,7 @@ class DB_AppWeeklyScores():
 		query = "SELECT no,awsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata, week FROM AppWeeklyScore WHERE awsid='%s'" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		return DB_AppWeeklyScores.set(row)
 
 	@staticmethod
@@ -465,6 +468,7 @@ class DB_AppWeeklyScores():
 		query = "SELECT no,awsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata, week FROM AppWeeklyScore WHERE awsid='%s'" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		if row:
 			return DB_AppWeeklyScores.set(row)
 		else:
@@ -482,6 +486,7 @@ class DB_AppWeeklyScores():
 
 		cursor.execute(query)
 		rows = cursor.fetchall()
+		conn.close()
 		return rows
 
 	@staticmethod
@@ -494,6 +499,7 @@ class DB_AppWeeklyScores():
 
 		cursor.execute(query)
 		row = cursor.fetchone()
+		conn.close()
 		return row[0]
 	
 	@staticmethod
@@ -537,15 +543,14 @@ class DB_AppWeeklyScores():
 
 			cursor.execute('SELECT LAST_INSERT_ID() FROM AppWeeklyScore')
 			row = cursor.fetchone()
-			logging.info(row)
 			if row:
 				self.no=row[0]
+			conn.close()
 
 		else:
 			conn = sqlConnect()
 			cursor = conn.cursor()
 			self.uTime = int(time.time())
-			logging.info(self.to_dict())
 			cursor.execute("UPDATE AppWeeklyScore SET auInfo=%s, nick=%s, flag=%s, sTime=%s, uTime=%s, eTime=%s, gType=%s, score=%s, userdata=%s,week=%s WHERE no=%s",
 				(	self.auInfo,
 					self.nick,
@@ -560,6 +565,7 @@ class DB_AppWeeklyScores():
 					self.no
 				))
 			conn.commit()
+			conn.close()
 
 	def to_dict(self):
 		_new = {}
@@ -635,6 +641,16 @@ class DB_AppUser(ndb.Model):
 	lastDate = ndb.DateTimeProperty(auto_now=True)
 	lastNID = ndb.IntegerProperty(default = 0)
 	requests = ndb.JsonProperty(default = [])
+	version = ndb.IntegerProperty(default=0)
+	loginCount = ndb.IntegerProperty(default=1)
+
+	def calcActiveTime(self):
+		if self.lastDate and self.joinDate:
+			return int((datetime.datetime.now() - self.lastDate).total_seconds())
+		else:
+			return 0
+
+	activeTime = ndb.ComputedProperty(calcActiveTime)
 	isPutOn = False
 
 	def putOn(self):
@@ -651,15 +667,16 @@ class DB_AppUser(ndb.Model):
 
 class DB_AppVersions(ndb.Model):
 	version = ndb.IntegerProperty(default=0)
+	apiVersion = ndb.IntegerProperty(default=0)
 	platform = ndb.StringProperty(default="")
 	createTime = ndb.DateTimeProperty(auto_now_add=True)
 	comment = ndb.StringProperty(default="")
 
 class DB_AppStats(ndb.Model):
-	category = ndb.StringProperty(default="")
 	year = ndb.IntegerProperty()
 	month = ndb.IntegerProperty()
 	day = ndb.IntegerProperty()
+	ymd = ndb.IntegerProperty()
 	statsData = ndb.JsonProperty(default={})
 
 	@staticmethod
@@ -667,37 +684,69 @@ class DB_AppStats(ndb.Model):
 		today = datetime.date.today().strftime("%Y%m%d")
 		data = memcache.get("stats")		
 		when = memcache.get("stats_when")
+
 		if not when:
 			when = today
 
 		if not data:
-			data = {'hit':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'install':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'update':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'country':{'en':0,'kr':0},'platform':{'ios':0,'android':0}}
+			data = {}
 
 		if today != when:
 			#데이터저장 when꺼를들고오기~~
 			stats = DB_AppStats.get_or_insert("stats_"+when)
-			stats.year = int(when[0:3])
-			stats.month = int(when[4:5])
-			stats.day = int(when[6:7])
-			stats.statsData = data
+			stats.year = int(when[0:4])
+			stats.month = int(when[4:6])
+			stats.day = int(when[6:8])
+			stats.ymd = int(when)
+			stats.statsData.update(data)
 			stats.put()
 			#새값생성
-			newdata={'hit':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'install':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'update':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'country':{'en':0,'kr':0},'platform':{'ios':0,'android':0}}
+			newdata={}
 			DB_AppStats.setInMC(newdata)
 			return newdata
-
 		return data
 
 	@staticmethod
 	def setInMC(data):
 		today = datetime.date.today().strftime("%Y%m%d")
-		memcache.set("stats",data,60*60*24*2)
-		memcache.set("stats_when",today,60*60*24*2)
+		memcache.set("stats",data)
+		memcache.set("stats_when",today)
+
+
+	@staticmethod
+	def countStatHour(category,count=1):
+		stats = DB_AppStats.getInMC()
+		hour = int(datetime.datetime.now().hour)
+		if not stats.get(category):
+			stats[category]=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+		elif type(stats.get(category)) != list:
+			return
+
+		try:
+			stats[category][hour]+=count
+		except KeyError:
+			stats[category][hour]=count
+		DB_AppStats.setInMC(stats)
+
+	@staticmethod
+	def countStatKey(category,key,count=1):
+		stats = DB_AppStats.getInMC()
+		if not stats.get(category):
+			stats[category]={}
+		elif type(stats.get(category)) != dict:
+			return
+
+		try:
+			stats[category][key]+=count
+		except KeyError:
+			stats[category][key]=count
+		DB_AppStats.setInMC(stats)
 
 class DB_AppLog(ndb.Model):
 	auInfo = ndb.KeyProperty(DB_AppUser)
-	category = ndb.StringProperty()
-	text = ndb.StringProperty()
+	version = ndb.IntegerProperty(default = 0)
+	category = ndb.StringProperty(default="")
+	text = ndb.StringProperty(default="")
 	time = ndb.DateTimeProperty(auto_now_add=True)
 
 class DB_AppScore(ndb.Model):
@@ -826,6 +875,17 @@ class DB_AppImage(ndb.Model):
 	developer = ndb.UserProperty()
 	imgurl=""
 	
-class DB_AppData(ndb.Model):
-	pass
+class DB_AppStage(ndb.Model):
+	stage = ndb.StringProperty(default="")
+	category = ndb.StringProperty(default="")
+	userdata = ndb.JsonProperty(default={})
+	createTime = ndb.DateTimeProperty(auto_now_add=True)
+
+class DB_AppFeedback(ndb.Model):
+	sender = ndb.JsonProperty(default = {})
+	category = ndb.StringProperty(default="")
+	content = ndb.StringProperty(default="")
+	userdata = ndb.JsonProperty(default = {})
+	createTime = ndb.DateTimeProperty(auto_now_add=True)
+	
 

@@ -2,12 +2,16 @@
 {% extends '_base.html' %}
 {% block bodycontent %}
 
-<table border=1>
-	<tr><td>
-			{{aID}} <a href=appmanager.html>back</a>
+<table border=1 width=100%>
+	<tr>
+		<td>
+			<b><font size=10>{{aID}}</font></b>  
 		</td>
-	</td></tr>
-	<tr><td>
+		<td align=right>
+			<a href=appmanager.html>BACK to appmanager</a>
+		</td>
+	</tr>
+	<tr><td colspan=2>
 		<table border=1><tr>
 			<td><a href=appView.html?aID={{aID}}>info</a></td>
 			<td><a href=appView_notice.html?aID={{aID}}>request</a></td>
@@ -18,12 +22,14 @@
 			<td><a href=appView_log.html?aID={{aID}}>log</a></td>
 			<td><a href=appView_version.html?aID={{aID}}>version</a></td>
 			<td><a href=appView_stats.html?aID={{aID}}>stats</a></td>
+			<td><a href=appView_stages.html?aID={{aID}}>stages</a></td>
 			</tr></table>
 	</td></tr>
-	<tr><td>
+	<tr><td colspan=2>
 		{% block editor %} {% endblock %}
 	</td></tr>
-	<tr><td>
+	<tr><td colspan=2>
 			{% block list %} {% endblock %} 
 	</td></tr>
+</table>
 {% endblock %}

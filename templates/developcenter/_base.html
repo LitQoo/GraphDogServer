@@ -1,19 +1,17 @@
-
 <html>
 	<head>
 		<title>Developer Center</title>
 		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 		<script src="jsonForm.js"></script>
-
-		<script src="developcenter/graphdog.js"></script>
+		<link rel="stylesheet" href="graphdog.css" type="text/css">
 	</head>
-	<body>
-		<table align=center border=1 width=80% height=80%>
+	<body leftmargin=0 topmargin=0>
+		<table align=center border=1 width=100% height=100%>
 		<tr>
 			<td height=30>Developer Center  - {{localtime}}</td>
 		</tr>
 		<tr>
-			<td align=center>
+			<td align=center valign=top>
 				{% block bodycontent %}
 					body content
 				{% endblock %}

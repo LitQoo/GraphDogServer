@@ -1,0 +1,39 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+<form action=appView_stages.html method=post>
+	<input type=hidden name=aID value={{aID|safe}}>
+			category:<input type=text name=category value={{data.category|safe}}><br>
+			stage:<input type=text name=stage value={{data.value|safe}}><br>
+			userdata<br>
+			<div id='userdata' class='jsonForm' value='{}'></div>
+
+			
+			<input type=submit value='save'>
+</form>
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+		<table width=100% border=1>
+			<tr>
+				<td>category</td>
+				<td>stage</td>
+				<td>userdata</td>
+			</tr>
+		{% for row in list %}
+			<tr>
+				<td>{{row.category|safe}}</td>
+				<td>{{row.stage|safe}}</td>
+				<td>{{row.userdata|safe}}</td>
+			</tr>
+		{%endfor%}
+	</table>
+
+	{% if more %}
+		<a href=/developcenter/appView_stages.html?aID={{aID}}&category={{category}}&cursor={{next_curs.urlsafe}}&limit={{limit}}>next</a>
+	{% endif %}
+
+	{% endif %}
+{% endblock %}

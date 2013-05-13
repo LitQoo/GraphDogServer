@@ -1,0 +1,14 @@
+{% for log in logList %}
+			<tr>
+				<td bgcolor={{log.auInfo.id}}><a href=/developcenter/appView_log.html?aID={{aID}}&auser={{log.auInfo.id}}&limit={{limit}}><font color=cccccc>{{log.auInfo.id}}</font></a></td>
+				<td>{{log.version|safe}}</td>
+				<td><a href=/developcenter/appView_log.html?aID={{aID}}&category={{log.category|safe}}&limit={{limit}}>{{log.category|safe}}</a></td>
+				<td>{{log.text|safe}}</td>
+				<td>
+					{{log.time}}
+				</td>
+			</tr>
+{%endfor%}
+{% if more %}
+		<tr id="nexttr"><td colspan=5><a href="#a" id="nextbtn" nextinfo="aID={{aID}}&category={{category}}&auser={{auser}}&cursor={{next_curs.urlsafe}}&limit={{limit}}">next</a></td></tr>
+{% endif %}

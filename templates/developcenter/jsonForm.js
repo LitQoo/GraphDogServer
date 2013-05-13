@@ -2,8 +2,8 @@
 $(document).ready(function() {
 			var jsonForm_typeSelector = function(formid,selectorName,defaultValue){
 				console.log('selectname:'+selectorName)
-				typelist = ["string","number","boolean","object","array","delete"]
-				rString = '<select id="type_'+selectorName+'" formid="'+formid+'" class="jsonFormselect">'
+				typelist = ["string","number","boolean","object","array","image","delete"]
+				rString = '<select id="type_'+selectorName+'" formid="'+formid+'" class="jsonFormselect" valueinput="value_'+selectorName+'">'
 				for(key in typelist){
 					if(typelist[key]==defaultValue){
 						rString += '<option value="'+typelist[key]+'" selected>'+typelist[key]+'</option>'	
@@ -230,6 +230,9 @@ $(document).ready(function() {
 					evalstring = 'valueData'+keystr+'["'+nowkey+'"]='+'false'
 				}else if($(this).val()=="array"){
 					evalstring = 'valueData'+keystr+'["'+nowkey+'"]=["newvalue"]'
+				}else if($(this).val()=="image"){
+					evalstring = 'valueData'+keystr+'["'+nowkey+'"]='+'"images"'
+					window.open('/developcenter/imageselector/?input='+$(this).attr('valueinput'),'imageselector','width=500 height=500 menubar=no status=no')
 				}else if($(this).val()=="delete"){
 					evalstring = 'valueData'+keystr+'["'+nowkey+'"]="-:#:DELETE:#:-"'
 				}

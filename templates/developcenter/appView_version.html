@@ -10,6 +10,7 @@
 		<table width=100% border=1>
 			<tr>
 				<td>version</td>
+				<td>graphdog Version</td>
 				<td>platform</td>
 				<td>comment</td>
 				<td>time</td>
@@ -17,6 +18,7 @@
 		{% for version in versionList %}
 			<tr>
 				<td>{{version.version}}</td>
+				<td>{{version.apiVersion}}</td>
 				<td>{{version.platform}}</td>
 				<td>{{version.comment}}</td>
 				<td>

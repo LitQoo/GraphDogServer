@@ -3,7 +3,7 @@
 #
 #	무조건 끝에 #추가
 #	통계추가 appstats
-#
+#	
 #
 #
 
@@ -37,13 +37,14 @@ class CommandHandler(SessionBaseHandler):
 		
 		logging.info('self.request')
 		logging.info(self.request)
-		logging.info('self.request.POST')
-		logging.info(self.request.POST)
 
 		token = self.request.get('token')
 		version = self.request.get('appver')
+		if not version:
+			version = 0
 		path = self.request.path
 		pathArray = path.split("/")
+		apiVersion = int(pathArray[2])
 		aID = pathArray[3]
 		cTime = int(time.time())
 		auInfo={}
@@ -76,16 +77,15 @@ class CommandHandler(SessionBaseHandler):
 		if cmdtext:
 			commands = json.loads(cmdtext) #decParam(self.request.get('command'))
 		
-		logging.info(commands)
 		tokens = CommandHandler.decToken(token,aInfo.secretKey)
 
 		namespace_manager.set_namespace(appNamespace)
 
-		logging.info('tokens2')
+		DB_AppStats.countStatHour('request')
+		logging.info('tokens')
 		logging.info(tokens)
 		logging.info('session')
 		logging.info(self.session)
-		logging.info(self.session.get('aID'))
 
 		allresult = {'timestamp':int(cTime),'createTime':str(cTime), 'version':version, 'state':'ok'}	
 
@@ -103,6 +103,7 @@ class CommandHandler(SessionBaseHandler):
 			if not appversions:
 				appversions = DB_AppVersions.get_or_insert(appverid)
 				appversions.platform = tokens.get('platform')
+				appversions.apiVersion = apiVersion
 				appversions.version = int(appver)
 				appversions.put()
 
@@ -120,13 +121,18 @@ class CommandHandler(SessionBaseHandler):
 			# and auInfo.createTime == tokens.get('createTime')
 			if auInfo and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
 				logging.info("user finded")
-				stats = DB_AppStats.getInMC()
-				hour = int(datetime.datetime.now().hour)
-				try:
-					stats['hit'][hour]+=1
-				except KeyError:
-					stats['hit'][hour]=1
-				DB_AppStats.setInMC(stats)
+				if not cTime:
+					cTime=0
+				if not auInfo.createTime:
+					auInfo.createTime="0"
+
+				lastDate = time.strftime("%Y%m%d", time.localtime(int(auInfo.createTime)))
+				today = time.strftime("%Y%m%d", time.localtime(time.time()))
+				if lastDate != today:
+					DB_AppStats.countStatHour('hit')
+					DB_AppStats.countStatKey('hitPlatform',tokens.get('platform'))
+					DB_AppStats.countStatKey('hitLanguage',tokens.get('lang'))
+					DB_AppStats.countStatKey('version',str(version))
 				# name , flag update after check
 				#if tokens.get('nick') and tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
@@ -138,8 +144,17 @@ class CommandHandler(SessionBaseHandler):
 				#		uInfo.put()
 				#		namespace_manager.set_namespace(appNamespace)
 				#createTime update
+
+				if auInfo.version != int(version):
+					DB_AppStats.countStatHour('update')
+
+				if not auInfo.loginCount:
+					auInfo.loginCount=0
+				else:
+					auInfo.loginCount+=1
 				
 				auInfo.createTime=str(cTime)
+				auInfo.version = int(version)
 				auInfo.putOn()
 
 				#weekly pint update after check!##############################
@@ -156,9 +171,9 @@ class CommandHandler(SessionBaseHandler):
 				if len(find)>0: #회원정보찾음
 					logging.info("find uid by udid")
 					uInfo = find[0]
-					if not tokens.get('nick'):
-						tokens['nick']=uInfo.nick
-						tokens['flag']=uInfo.flag
+					#if not tokens.get('nick'):
+					#	tokens['nick']=uInfo.nick
+					#	tokens['flag']=uInfo.flag
 
 					#check app installed in user info
 					
@@ -197,13 +212,12 @@ class CommandHandler(SessionBaseHandler):
 					namespace_manager.set_namespace(appNamespace)
 					allresult['isFirst']=True
 					
-					stats = DB_AppStats.getInMC()
-					hour = int(datetime.datetime.now().hour)
-					try:
-						stats['install'][hour]+=1
-					except KeyError:
-						stats['install'][hour]=1
-					DB_AppStats.setInMC(stats)
+
+					DB_AppStats.countStatHour('join')
+					DB_AppStats.countStatKey('joinPlatform',tokens.get('platform'))
+					DB_AppStats.countStatKey('joinLanguage',tokens.get('lang'))
+
+					self.session['firstConnect']="yes"
 
 					#cpiEvents check get
 					if len(uInfo.CPIEvents)>0:
@@ -239,17 +253,22 @@ class CommandHandler(SessionBaseHandler):
 								logging.info(newRequest)
 								logging.info(fromAppUserInfo.nick)
 
+								
+								DB_AppStats.countStatKey('cpiEventTo',aInfo.key.id())
+
 								namespace_manager.set_namespace(gdNamespace)
 								del uInfo.CPIEvents[i]
 								uInfo.put()
 								namespace_manager.set_namespace(appNamespace)
+
+								DB_AppStats.countStatKey('cpiEventFrom',cpi.get('fromAppID'))
+								
 
 								allresult['cpiEvent']=True
 								break
 							i=i+1
 			else :
 				self.printError('authorise error11',9999,aInfo.secretKey)
-				logging.info(tokens.get('createTime'))
 				return
 
 
@@ -266,8 +285,11 @@ class CommandHandler(SessionBaseHandler):
 			logging.info('session aid:'+str(self.session.get('aID')))
 			logging.info('session cTime:'+str(cTime))
 			auInfo.createTime=str(cTime)
+			auInfo.version = int(version)
 			tokens['createTime']=str(cTime)
 			logging.info(json.dumps(allresult))
+
+			auInfo.put()
 			self.response.write(CommandHandler.strToDesInBase64(json.dumps(allresult),aInfo.secretKey).strip()+"#")
 			return
 
@@ -276,7 +298,6 @@ class CommandHandler(SessionBaseHandler):
 			#key =  ndb.Key(urlsafe=self.session.get('auID'))
 			#auInfo = key.get()
 			auInfo = DB_AppUser.get_by_id(int(self.session.get('auID')))
-			logging.info('nick : ' + str(self.session.get('auID')))
 
 		#login check
 		if not self.session.get('aID') or not self.session.get('auID'):
@@ -290,14 +311,13 @@ class CommandHandler(SessionBaseHandler):
 			#return
 
 
-
-
-
 		for commandID,command in commands.items():
 			logging.info('########################### start command ###############################')
+
 			actions=[command.get('a')]
 			action=command.get('a')
 			param=command.get('p')
+			logging.info('## action : '+action)
 			logging.info(param)
 
 			#기본리턴값
@@ -312,9 +332,6 @@ class CommandHandler(SessionBaseHandler):
 				self.session['auID']=''
 				self.session['aID']=''
 				allresult[commandID]=self.createError('logout',100)
-				
-				logging.info('session auid:'+self.session.get('auID'))
-				logging.info('session aid:'+self.session.get('aID'))
 				continue
 
 
@@ -336,7 +353,7 @@ class CommandHandler(SessionBaseHandler):
 				result['timestamp']=int(cTime)
 
 			# getweek
-			if 'getweek' in actions: ##########################################################################
+			if 'getweek' in actions: #########################h#################################################
 				result['week']=int(datetime.date.today().strftime("%U"))+1
 				localtime = time.localtime(time.time())
 				weekday = int(datetime.date.today().strftime("%u"))
@@ -362,7 +379,7 @@ class CommandHandler(SessionBaseHandler):
 
 			
 
-			#action startscores
+			#action getflagranks
 			if 'getflagranks' in actions:#~ ##########################################################################
 				scoresSortValue = aInfo.scoresSortValue
 				startTime = int(cTime)/scoresSortValue*scoresSortValue
@@ -370,7 +387,6 @@ class CommandHandler(SessionBaseHandler):
 				if not gType:
 					gType = 'default'
 
-				logging.info('startscores')
 				#DB_AppScore.sTime==startTime
 				nowdate = datetime.date.today().strftime("%Y%m%d")
 				flaglist =  DB_AppFlagScore.query(ndb.AND(DB_AppFlagScore.date==nowdate,DB_AppFlagScore.gType==gType)).order(-DB_AppFlagScore.score).fetch(10)
@@ -416,8 +432,7 @@ class CommandHandler(SessionBaseHandler):
 
 			#action startscores
 			if 'startscores' in actions:#~ ##########################################################################
-				sqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
-				logging.info('startscores')
+				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				sortValue=aInfo.scoresSortValue
 			#param ->  type, score, userdata, 
 				gType = param.get('type')
@@ -459,17 +474,14 @@ class CommandHandler(SessionBaseHandler):
 					asInfo2.userdata = userdata
 				asInfo2.put()
 
-				baseSIDs = DB_AppScores.query('ORDER BY no desc LIMIT 100,1')
+				baseSIDs = DB_AppScores.query('WHERE gType="'+gType+'" ORDER BY no desc LIMIT 100,1')
 				if baseSIDs:
 					baseSID=DB_AppScores.set(baseSIDs[0])
 					self.session['baseScoreID']=baseSID.asid
 				else:
-					baseSIDs = DB_AppScores.query('ORDER BY no asc LIMIT 1')
+					baseSIDs = DB_AppScores.query('WHERE gType="'+gType+'" ORDER BY no asc LIMIT 1')
 					baseSID=DB_AppScores.set(baseSIDs[0])
 					self.session['baseScoreID']=baseSID.asid
-
-				logging.info('set base id')
-				logging.info(baseSID.to_dict())
 
 				self.session['asID2']=asInfo2.asid
 				########################################################
@@ -479,24 +491,11 @@ class CommandHandler(SessionBaseHandler):
 				##self.session['asID']=asInfo.key.id()
 				self.session['gType']=str(gType)
 
-				logging.info(namespace_manager.get_namespace())
-				logging.info(str(self.session.get('asID')))
-				logging.info(str(self.session.get('asSortTime')))
-				logging.info(str(self.session.get('auID')))
-				logging.info(str(self.session.get('aID')))
-				logging.info(str(self.session.get('gType')))
-
 				result['state']='ok'
-				sqlClose()
+
 
 			if 'getscores' in actions: ##########################################################################
-				sqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
-				logging.info(namespace_manager.get_namespace())
-				logging.info(str(self.session.get('asID')))
-				logging.info(str(self.session.get('asSortTime')))
-				logging.info(str(self.session.get('auID')))
-				logging.info(str(self.session.get('aID')))
-				logging.info(str(self.session.get('gType')))
+				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				
 				asInfo2 = DB_AppScores.get(int(self.session.get('asID2')))
 
@@ -522,6 +521,7 @@ class CommandHandler(SessionBaseHandler):
 				
 
 				##asInfo.isOver = bool(param.get('isover'))
+				asInfo2.uTime = int(cTime)
 				asInfo2.isOver = bool(param.get('isover'))
 
 
@@ -538,14 +538,13 @@ class CommandHandler(SessionBaseHandler):
 				if asInfo2.isOver:
 					##asInfo.eTime = cTime
 					asInfo2.eTime = cTime
-					logging.info(self.session.get('asID'))
 
 					#flag scores update
 					nowdate = datetime.date.today().strftime("%Y%m%d")
 					flagid = nowdate+"_"+gType+"_"+auInfo.flag
 					flagInfo=DB_AppFlagScore.get_or_insert(flagid)
 					flagInfo.date = nowdate
-					flagInfo.flag = auInfo.flag
+					flagInfo.flag = tokens.get('flag')
 					flagInfo.gType = gType
 					
 					if flagInfo.score:
@@ -566,8 +565,6 @@ class CommandHandler(SessionBaseHandler):
 
 					##weeklydata = DB_AppWeeklyScore.get_or_insert(weekid)
 					weeklydata = DB_AppWeeklyScores.get_or_insert(weekid)
-					logging.info(weeklydata.to_dict())
-					logging.info(nowweek)
 					if weeklydata.score<asInfo2.score or weeklydata.week != nowweek:
 						weeklydata.week=nowweek
 						weeklydata.gType=asInfo2.gType
@@ -575,10 +572,9 @@ class CommandHandler(SessionBaseHandler):
 						weeklydata.score = asInfo2.score
 						weeklydata.nick = asInfo2.nick
 						weeklydata.flag = asInfo2.flag
-						weeklydata.sTime = asInfo2.uTime
+						weeklydata.sTime = asInfo2.sTime
 						weeklydata.eTime = asInfo2.eTime
 						weeklydata.userdata = asInfo2.userdata
-						logging.info(weeklydata.to_dict())
 						weeklydata.put()
 						result['newweeklyscore']=True
 						
@@ -594,7 +590,7 @@ class CommandHandler(SessionBaseHandler):
 							maxdata.score = asInfo2.score
 							maxdata.nick = asInfo2.nick
 							maxdata.flag = asInfo2.flag
-							maxdata.sTime = asInfo2.uTime
+							maxdata.sTime = asInfo2.sTime
 							maxdata.eTime = asInfo2.eTime
 							maxdata.userdata = asInfo2.userdata
 							maxdata.put()
@@ -615,11 +611,6 @@ class CommandHandler(SessionBaseHandler):
 					##result['myrank'] = result.get('alluser')-DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType,DB_AppScore.score<=asInfo.score)).count()+1
 					result['myrank'] = DB_AppScores.count("WHERE no>%s AND gType='%s' AND score>%s"%(baseScoreID,gType,asInfo2.score))+1
 
-				logging.info('myrank is')
-				logging.info(result['myrank'])
-
-				logging.info('myscore is')
-				logging.info('info '+str(asInfo2.score))
 
 				#asInfo = future.get_result()
 				isAddMe=False
@@ -739,9 +730,9 @@ class CommandHandler(SessionBaseHandler):
 					self.session['asID']=''
 
 				#asInfo.put()
-				sqlClose()
+				
 			if 'getmaxscores' in actions: ###############################################################################
-				sqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
+				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				if not gType:
 					gType = 'default'
@@ -762,7 +753,7 @@ class CommandHandler(SessionBaseHandler):
 				##result['myrank']=result.get('alluser')-DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType,DB_AppMaxScore.score<=maxdata.score)).count()+1
 
 				result['alluser']=DB_AppMaxScores.count("WHERE gType='%s'"%gType)
-				result['myrank']=DB_AppMaxScores.count("WHERE gType='%s' and score<%s"%(gType,maxdata.score))
+				result['myrank']=DB_AppMaxScores.count("WHERE gType='%s' and score>%s"%(gType,maxdata.score))+1
 				notinten=False
 				if(result.get('myrank')<=10):
 					##maxlist = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(10)
@@ -795,13 +786,12 @@ class CommandHandler(SessionBaseHandler):
 					r+=1
 
 				result['state']='ok'
-				sqlClose()
 
 
 
 			if 'getweeklyscores' in actions: ################################################################################
 
-				sqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
+				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				if not gType:
 					gType = 'default'
@@ -823,7 +813,7 @@ class CommandHandler(SessionBaseHandler):
 				##result['myrank']=result.get('alluser')-DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType,DB_AppMaxScore.score<=maxdata.score)).count()+1
 
 				result['alluser']=DB_AppWeeklyScores.count("WHERE gType='%s' and week=%s"%(gType,nowweek))
-				result['myrank']=DB_AppWeeklyScores.count("WHERE gType='%s' and week=%s and score<%s"%(gType,nowweek,weeklydata.score))
+				result['myrank']=DB_AppWeeklyScores.count("WHERE gType='%s' and week=%s and score>%s"%(gType,nowweek,weeklydata.score))+1
 				notinten=False
 				if(result.get('myrank')<=10):
 					##maxlist = DB_AppMaxScore.query(ndb.AND(DB_AppMaxScore.gType==gType)).order(-DB_AppMaxScore.score).fetch(10)
@@ -856,7 +846,6 @@ class CommandHandler(SessionBaseHandler):
 					r+=1
 
 				result['state']='ok'
-				sqlClose()
 	##			gType = param.get('type')
 	##			if not gType:
 	##				gType = 'default'
@@ -941,13 +930,13 @@ class CommandHandler(SessionBaseHandler):
 			if 'getrequests' in actions: #######################################################################################
 				limit = param.get('limit')
 				category = param.get('category')
-				categorys = ['all','cpievent','notice','housead','update','defalut']
+				categorys = ['all','cpievent','notice','housead','update','default']
 				autoremoves=[]
 
 				if type(param.get('autoremove')) == bool:
 					autoremove = param.get('autoremove')
 					if autoremove==True:
-						autoremoves=['all','cpievent','notice','housead','update','defalut']
+						autoremoves=['all','cpievent','notice','housead','update','default']
 					else:
 						autoremoves = []
 				elif type(param.get('autoremove')) == str:
@@ -958,18 +947,14 @@ class CommandHandler(SessionBaseHandler):
 
 				if category:
 					if type(category)==list:
-						logging.info('category is list')
 						categorys = category
 					elif category!='all':
 							categorys = [category]
-							logging.info('category is str')
 
 
 				if not limit:
 					limit = 10
 				
-				logging.info(categorys)
-
 				if type(auInfo.requests) != list:
 					auInfo.requests=[]
 				
@@ -989,16 +974,27 @@ class CommandHandler(SessionBaseHandler):
 				if not auInfo.lastNID:
 					auInfo.lastNID=0
 
-				where = ndb.AND(DB_AppNotice.createTime>auInfo.lastNID,DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(categorys))
 
-				nlist = DB_AppNotice.query(where).fetch(1)
+				if self.session.get('firstConnect')=="ok":
+					nlist=[]
+				else:
+					where = ndb.AND(DB_AppNotice.createTime>auInfo.lastNID,DB_AppNotice.platform.IN(platformlist),DB_AppNotice.category.IN(categorys))
+					nlist = DB_AppNotice.query(where).fetch(1)
 
+				uInfo={}
 				if nlist:
 					auInfo.lastNID = cTime
+					uInfo = auInfo.uInfo.get()
 
 				for notice in nlist:
 					#notice = nlist[0]
 					#여기에 조건(appversion, osversion) 검사 후 진짜 넘길지 말지 결정
+										# 1. 이미설치된 앱인가 검사
+					if notice.category == "housead":
+						if type(notice.userdata) == dict and notice.userdata.get('storeid'):
+							if notice.userdata.get('storeid') in uInfo.installs:
+								continue
+
 					requestDict={}
 					requestDict['rid']=notice.key.id()
 					requestDict['category']=notice.category
@@ -1074,10 +1070,9 @@ class CommandHandler(SessionBaseHandler):
 				user = auInfo.uInfo.get()
 
 				if type(cpiReward) != dict:
-					cpiReward = {'defalut':1000}
+					cpiReward = {'default':1000}
 
 				for cpi in cpiList:
-					logging.info(cpi.key.id())
 
 					if cpi.key.id() == aID:
 						logging.info('self app continue')
@@ -1220,13 +1215,15 @@ class CommandHandler(SessionBaseHandler):
 				newlog = DB_AppLog()
 				category = param.get('category')
 				if not category:
-					category = 'defalut'
+					category = 'default'
 				newlog.text = param.get('log')
 				newlog.category = category
 				newlog.auInfo = auInfo.key
+				newlog.version = int(version)
 				newlog.put()
 				result['state']='ok'
-			
+				DB_AppStats.countStatHour('log')
+
 			if 'setuserdata' in actions:#######################################################################################
 				if not type(param.get('userdata')):
 					result['state']='error'
@@ -1249,13 +1246,15 @@ class CommandHandler(SessionBaseHandler):
 		namespace_manager.set_namespace(appNamespace)
 		#put
 		auInfo.doPut()
+
+
 		#uInfo.doPut()
 		#결과리턴
 		resultStr = json.dumps(allresult,encoding="utf-8",ensure_ascii=False)
-		logging.info("version 4")
+		logging.info(resultStr)
 		resultStr = CommandHandler.strToDesInBase64(resultStr,aInfo.secretKey)
 		self.response.write(resultStr.strip()+"#")
-		logging.info(resultStr)
+		
 		
 	
 
@@ -1278,9 +1277,6 @@ class CommandHandler(SessionBaseHandler):
 	
 	@classmethod
 	def strToDesInBase64(cls,text,skey):
-		logging.info("str to desinbase64")
-		logging.info("text type is")
-		logging.info(type(text))
 
 		obj = DES.new(skey,DES.MODE_ECB)
 		
@@ -1297,11 +1293,7 @@ class CommandHandler(SessionBaseHandler):
 
 	@classmethod
 	def DesInBase64ToStr(cls,text,skey):
-		logging.info("desinbase64 to str "+skey)
 		text=text.replace(" ","+")
-		logging.info(text)
-		logging.info('repr')
-		logging.info(repr(text))
 		text=base64.b64decode(text)
 		obj = DES.new(skey,DES.MODE_ECB)
 		rStr=obj.decrypt(text)

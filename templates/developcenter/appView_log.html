@@ -8,30 +8,37 @@ loglist
 {{msg}}
 	{% else %}
 		{% if auInfo %}
-		join: {{auInfo.joinDate}} , last: {{auInfo.lastDate}}
+		join: {{auInfo.joinDate}} , last: {{auInfo.lastDate}}, activeTime : {{auInfo.activeTime}}
 		{% endif %}
-		<table width=100% border=1>
+
+
+<script>  
+$(document).ready(function(){               //ajax실행중 loading글씨 보이기  
+	var nextlist = function(){
+		console.log($("#nextbtn").attr("nextinfo"))
+   		$.get("appView_log_data.html", $("#nextbtn").attr("nextinfo"), function(data){ 
+   					$('#nexttr').remove()
+   					$('#loglist').append(data)     //div1에 내용 넣기  
+   					$('#nextbtn').click(nextlist)
+			 }  
+		); 
+   }
+
+   nextlist()
+
+});  
+</script>  
+	<table width=100% border=1 id="loglist">
 			<tr>
 				<td>user</td>
+				<td>version</td>
 				<td>category</td>
 				<td>log</td>
 				<td>time</td>
 			</tr>
-		{% for log in logList %}
-			<tr>
-				<td bgcolor={{log.auInfo.id}}><a href=/developcenter/appView_log.html?aID={{aID}}&auser={{log.auInfo.id}}&limit={{limit}}><font color=cccccc>{{log.auInfo.id}}</font></a></td>
-				<td><a href=/developcenter/appView_log.html?aID={{aID}}&category={{log.category|safe}}&limit={{limit}}>{{log.category|safe}}</a></td>
-				<td>{{log.text|safe}}</td>
-				<td>
-					{{log.time}}
-				</td>
-			</tr>
-		{%endfor%}
+		<tr id="nexttr"><td colspan=5><a href="#a" id="nextbtn" nextinfo="aID={{aID}}&category={{category}}&auser={{auser}}&cursor={{next_curs.urlsafe}}&limit={{limit}}">next</a></td></tr>
 	</table>
-
-	{% if more %}
-		<a href=/developcenter/appView_log.html?aID={{aID}}&category={{category}}&auser={{auser}}&cursor={{next_curs.urlsafe}}&limit={{limit}}>next</a>
-	{% endif %}
+	
 
 	{% endif %}
 {% endblock %}

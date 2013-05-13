@@ -147,7 +147,8 @@ class DevelopCenterHandler(SessionBaseHandler):
 		if aID:
 			gdNamespace = namespace_manager.get_namespace()
 			appNamespace = 'APP_'+aID
-			values['aInfo'] = DB_App.get_by_id(aID)
+			aInfo = DB_App.get_by_id(aID)
+			values['aInfo'] = aInfo
 			logging.info(type(values['aInfo'].store))
 			values['aInfo'].store = json.dumps(values.get('aInfo').store,encoding="utf-8",ensure_ascii=False)
 			values['aInfo'].cpiReward = json.dumps(values.get('aInfo').cpiReward,encoding="utf-8",ensure_ascii=False)
@@ -156,16 +157,11 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 		if path == '/developcenter/appmanager.html':	####################################################################
 			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
-			values['userList'] = DB_User.query().fetch(30)
 		
 		if path == '/developcenter/appView_version.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			values['versionList']=DB_AppVersions.query().order(-DB_AppVersions.createTime).fetch()
 
-		if path == '/developcenter/appView_notice.html':		####################################################################
-			namespace_manager.set_namespace(appNamespace)
-			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch()
-		
 		if path == '/developcenter/appView_notice.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch()
@@ -198,8 +194,31 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 			if auser:
 				auserkey = DB_AppUser.get_by_id(int(auser)) #ndb.Key('DB_AppUser',auser).get()
+				#delta = auserkey.lastDate - auserkey.joinDate
+				#values['activeTime']= int(delta.total_seconds())
 				values['auInfo']=auserkey
-				logging.info(auserkey)
+
+			##logList = DB_AppLog.query().order(-DB_AppLog.time).fetch()
+			values['auser']=auser
+			values['limit'] = limit
+			values['category']=category
+		
+		if path == '/developcenter/appView_log_data.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			curs = Cursor(urlsafe=self.request.get('cursor'))
+			auser = self.request.get('auser')
+			category = self.request.get('category')
+			limit = self.request.get('limit')
+			if not limit:
+				limit=30
+			else:
+				limit=int(limit)
+
+			if auser:
+				auserkey = DB_AppUser.get_by_id(int(auser)) #ndb.Key('DB_AppUser',auser).get()
+				#delta = auserkey.lastDate - auserkey.joinDate
+				#values['activeTime']= int(delta.total_seconds())
+				values['auInfo']=auserkey
 				logList, next_curs, more=DB_AppLog.query(DB_AppLog.auInfo==auserkey.key).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
 			elif category:
 				values['category']=category
@@ -213,13 +232,41 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['next_curs'] = next_curs
 			values['more'] = more
 			values['limit'] = limit
-			
+
 		if path == '/developcenter/appView_giftcode.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			values['giftcodeList']=DB_AppGiftcode.query().order(-DB_AppGiftcode.createTime).fetch()
 
 		if path == '/developcenter/appView_rank.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
+			setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
+			curs = Cursor(urlsafe=self.request.get('cursor'))
+			limit = self.request.get('limit')
+			auser = self.request.get('auser')
+
+			if not limit:
+				limit=30
+			else:
+				limit=int(limit)
+			rankList=[]
+			if auser:
+				rankList = DB_AppScores.query("WHERE auInfo="+str(auser)+" ORDER BY no desc LIMIT "+str(limit))
+			else:
+				rankList = DB_AppScores.query("ORDER BY no desc LIMIT "+str(limit))
+				
+			values['rankList']=[]
+			for row in rankList:
+				sinfo = DB_AppScores.set(row)
+				sinfo.sTime = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(sinfo.sTime))
+				values['rankList'].append(sinfo)
+
+			values['limit'] = limit
+			values['auser'] = auser
+
+		if path == '/developcenter/appView_stats.html':		####################################################################
+			namespace_manager.set_namespace(appNamespace)
+			
+			
 			curs = Cursor(urlsafe=self.request.get('cursor'))
 			limit = self.request.get('limit')
 			if not limit:
@@ -227,32 +274,17 @@ class DevelopCenterHandler(SessionBaseHandler):
 			else:
 				limit=int(limit)
 
-			rankList, next_curs, more=DB_AppScore.query().order(-DB_AppScore.uTime).fetch_page(limit, start_cursor=curs)
-
-			values['rankList'] = rankList
+			statList, next_curs, more=DB_AppStats.query().order(-DB_AppStats.ymd).fetch_page(limit, start_cursor=curs)
+			todayStat = {"statsData":DB_AppStats.getInMC(), "ymd":"today"}
+			statList.insert(0,todayStat)
+			values['statList'] = statList
 			values['next_curs'] = next_curs
 			values['more'] = more
 			values['limit'] = limit
-			logging.info(next_curs)
-			logging.info(more)
 
-
-		if path == '/developcenter/appView_stats.html':		####################################################################
+		if path == '/developcenter/appView_stages.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			
-			stats = DB_AppStats.getInMC()
-			text = "<table border=1><tr><td></td>"
-			for num in range(0,24):
-				text+="<td>"+str(num)+"</td>"
-			text+="</tr><tr><td>install</td>"
-			for num in range(0,24):
-				text+="<td>"+str(stats['install'][num])+"</td>"
-			text+="</tr><tr><td>hit</td>"
-			for num in range(0,24):
-				text+="<td>"+str(stats['hit'][num])+"</td>"
-			text+="</tr></table>"
-			self.response.write(text)
-			values['today']=datetime.datetime.now().hour
+			values['list']=DB_AppStage.query().order(-DB_AppStage.createTime).fetch()
 
 		if doRender(self,path,values):
 			return
@@ -380,7 +412,7 @@ class DevelopCenterHandler(SessionBaseHandler):
 				self.response.write('error : change aID')
 				return
 
-			createDatabaseAndConnect(aid=newApp.aID)
+			createDatabaseAndConnect(aid=newApp.aID,instance=CLOUDSQL_INSTANCE)
 			DB_AppScores.createTable()
 			DB_AppWeeklyScores.createTable()
 			DB_AppMaxScores.createTable()
@@ -478,6 +510,18 @@ class DevelopCenterHandler(SessionBaseHandler):
 			
 			values['msg']= "created giftcode category:"+self.request.get('category')+"<br> value:"+self.request.get('value')+"<br>"+ codelist
 			
+			self.redirect(path+"?aID="+self.request.get('aID'))
+			#doRender(self,path,values)
+
+		if path =='/developcenter/appView_stages.html':######################################
+			namespace_manager.set_namespace(appNamespace)
+			newRow = DB_AppStage()
+			newRow.stage=self.request.get('stage')
+			newRow.category=self.request.get('category')
+			if self.request.get('userdata'):
+				newRow.userdata=json.loads(self.request.get('userdata'))
+			newRow.put()
+			values['msg']='save new data'
 			self.redirect(path+"?aID="+self.request.get('aID'))
 			#doRender(self,path,values)
 

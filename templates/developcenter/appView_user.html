@@ -3,31 +3,49 @@
 {% endblock %}
 
 {% block list %} 
+<script>
+ $(document).ready(function(){
+ 	$('.activeTime').each(function(index){
+ 		at = Number($(this).attr('activeTime'))
+ 		at = at/(60*60)
+ 		if(at>48)at=48
+ 		color = parseInt(at/(48)*255)
+ 		$(this).css('background-color','rgb(255,'+color+','+color+')')
+
+ 	})
+ })
+</script>
 		<table width=100% border=1>
 			<tr>
 				<td>no</td>
+				<td>version</td>
 				<td>nick</td>
 				<td>flag</td>
 				<td>udid</td>
 				<td>requests</td>
 				<td>lastConnect</td>
 				<td>joindate</td>
+				<td>loginCount</td>
 				<td></td>
 			</tr>
 		{% for appuser in userList %}
 			<tr>
 				<td>{{appuser.key.id}}</td>
+				<td>{{appuser.version}}</td>
 				<td>{{appuser.nick}}</td>
 				<td>{{appuser.flag}}</td>
 				<td>{{appuser.udid}}</td>
 				<td>{{appuser.requests}}</td>
-				<td>
+				<td class="activeTime" activeTime="{{appuser.activeTime}}">
 					{{appuser.lastDate}}
 				</td>
 				<td>
 					{{appuser.joinDate}}
 				</td>
-				<td><a href=/developcenter/appView_log.html?aID={{aID}}&auser={{appuser.key.id}}>log</a></td>
+				<td>{{appuser.loginCount}}</td>
+				<td><a href=/developcenter/appView_log.html?aID={{aID}}&auser={{appuser.key.id}}>log</a>
+				<a href=/developcenter/appView_rank.html?aID={{aID}}&auser={{appuser.key.id}}>rank</a>
+				</td>
 			</tr>
 		{%endfor%}
 	</table>

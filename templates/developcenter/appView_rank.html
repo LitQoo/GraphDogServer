@@ -10,6 +10,7 @@ userrank
 		<table width=100% border=1>
 			<tr>
 				<td>name</td>
+				<td>flag</td>
 				<td>category</td>
 				<td>score</td>
 				<td>time</td>
@@ -17,11 +18,12 @@ userrank
 			</tr>
 		{% for row in rankList %}
 			<tr>
-				<td>{{row.nick}}</td>
+				<td><a href=/developcenter/appView_rank.html?aID={{aID}}&auser={{row.auInfo}}>{{row.nick}}</a></td>
+				<td>{{row.flag}}</td>
 				<td>{{row.gType}}</td>
 				<td>{{row.score}}</td>
 				<td>
-					{{row.playTime}} ,{{row.uTime}}~{{row.eTime}}
+					{{row.sTime}}, {{row.playTime}}
 				</td>
 				<td>
 					{{row.userdata}}
@@ -30,8 +32,5 @@ userrank
 		{%endfor%}
 	</table>
 
-	{% if next_curs %}
-		<a href=/developcenter/appView_rank.html?aID={{aID}}&cursor={{next_curs.urlsafe}}&limit={{limit}}>next</a>
-	{% endif %}
 	{% endif %}
 {% endblock %}

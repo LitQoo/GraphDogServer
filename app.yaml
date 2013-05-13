@@ -31,6 +31,9 @@ handlers:
 - url: /command/4/.*
   script: command4.app
 
+- url: /command/5/.*
+  script: command5.app
+
 - url: /command
   script: command0.app
 
