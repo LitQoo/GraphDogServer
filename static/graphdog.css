@@ -1,0 +1,21 @@
+table.datalist {margin:0 auto; border-collapse:collapse; width:95%; border:1px solid #000000;}
+.datalist th, .datalist td {border:1px solid #000000;}
+.datalist caption {font-weight:700; font-size:20px; color:#1BA6B2; margin-bottom:5px}
+.datalist thead th {background:#ABC668; color:#fff; text-align:center; border-right:1px}
+.datalist tbody tr:hover {background:#F3F5BB}
+.datalist tbody tr:hover th {background:#F2F684; color:#1BA6B2}
+.datalist tbody tr.nexttr {border-top:6px solid #666666; color:#1BA6B2; text-align:center;}
+
+.datalistodd {background:#f2f2f2}
+
+._appview_base{margin:0 auto;border-collapse:collapse; border:0px hidden;}
+._appview_base_menu_td{background:#eeeeee;}
+
+._appview_base_menu{border:0px hidden; height:40px; }
+._appview_base_menu td{width:100px; text-align:center; color:#000000}
+._appview_base_menu td:hover {background:#CCCCCC; color:orange}
+
+._base{margin:0 auto; border-collapse:collapse;  border:0px hidden;}
+
+._base_header {background:#333333; color:#fff; height:20px;}
+._base_footer {background:#333333; color:#fff; text-align:center; height:40px;}

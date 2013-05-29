@@ -7,15 +7,17 @@ userrank
 	{% if msg %}
 {{msg}}
 	{% else %}
-		<table width=100% border=1>
+		<table class="datalist">
+		<thead>
 			<tr>
-				<td>name</td>
-				<td>flag</td>
-				<td>category</td>
-				<td>score</td>
-				<td>time</td>
-				<td>userdata</td>
+				<th>name</th>
+				<th>flag</th>
+				<th>category</th>
+				<th>score</th>
+				<th>time</th>
+				<th>userdata</th>
 			</tr>
+			</thead>
 		{% for row in rankList %}
 			<tr>
 				<td><a href=/developcenter/appView_rank.html?aID={{aID}}&auser={{row.auInfo}}>{{row.nick}}</a></td>

@@ -18,33 +18,22 @@ create giftcode
 	{% if msg %}
 {{msg}}
 	{% else %}
-		<table width=100% border=1>
+	<table class="datalist" source="appView_data.html" db="DB_AppGiftcode" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
+
 			<tr>
-				<td>code</td>
-				<td>category</td>
-				<td>value</td>
-				<td>userdata</td>
-				<td>createTime</td>
-				<td>user</td>
-				<td>useTime</td>
+				<th field="code">code</th>
+				<th field="category" editor="text">category</th>
+				<th field="value" editor="text">value</th>
+				<th field="userdata" convert="jsondata" editor="jsonform">userdata</th>
+				<th field="createtime" convert="timeToDate">createTime</th>
+				<th field="user">user</th>
+				<th field="usetime" convert="timeToDate">useTime</th>
+				<th deletebutton="on">del</th>
 			</tr>
-		{% for row in giftcodeList %}
-			<tr>
-				<td>{{row.code}}</td>
-				<td>{{row.category}}</td>
-				<td>{{row.value}}</td>
-				<td>{{row.userdata}}</td>
-				<td>
-					{{row.createTime}}
-				</td>
-				<td>
-					{{row.user}}
-				</td>
-				<td>
-					{{row.useTime}}
-				</td>
-			</tr>
-		{%endfor%}
+	</thead>
+	<tbody>
+	</tbody>
 	</table>
 	{% endif %}
 {% endblock %}

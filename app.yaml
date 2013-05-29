@@ -46,8 +46,8 @@ handlers:
 - url: /.*
   script: main.app
 
-builtins:
-- appstats: on
+#builtins:
+#- appstats: on
 
 libraries:
 - name: webapp2

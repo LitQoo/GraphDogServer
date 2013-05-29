@@ -1,8 +1,7 @@
 
 {% extends '_base.html' %}
 {% block bodycontent %}
-
-<table border=1 width=100%>
+<table width=100% class="_appview_base">
 	<tr>
 		<td>
 			<b><font size=10>{{aID}}</font></b>  
@@ -11,19 +10,20 @@
 			<a href=appmanager.html>BACK to appmanager</a>
 		</td>
 	</tr>
-	<tr><td colspan=2>
-		<table border=1><tr>
-			<td><a href=appView.html?aID={{aID}}>info</a></td>
-			<td><a href=appView_notice.html?aID={{aID}}>request</a></td>
-			<td><a href=appView_explorer.html?aID={{aID}}>explorer</a></td>
-			<td><a href=appView_user.html?aID={{aID}}>user</a></td>
-			<td><a href=appView_giftcode.html?aID={{aID}}>giftcode</a></td>
-			<td><a href=appView_rank.html?aID={{aID}}>rank</a></td>
-			<td><a href=appView_log.html?aID={{aID}}>log</a></td>
-			<td><a href=appView_version.html?aID={{aID}}>version</a></td>
-			<td><a href=appView_stats.html?aID={{aID}}>stats</a></td>
-			<td><a href=appView_stages.html?aID={{aID}}>stages</a></td>
-			</tr></table>
+	<tr><td colspan=2 class="_appview_base_menu_td">
+		<table align=center class="_appview_base_menu"><tr>
+			<td><a href=appView.html?aID={{aID}}>INFO</a></td>
+			<td><a href=appView_notice.html?aID={{aID}}>NOTICE</a></td>
+			<td><a href=appView_user.html?aID={{aID}}>USER</a></td>
+			<td><a href=appView_giftcode.html?aID={{aID}}>GIFTCODE</a></td>
+			<td><a href=appView_rank.html?aID={{aID}}>SCORE</a></td>
+			<td><a href=appView_log.html?aID={{aID}}>LOG</a></td>
+			<td><a href=appView_version.html?aID={{aID}}>VERSION</a></td>
+			<td><a href=appView_stats.html?aID={{aID}}>STATS</a></td>
+			<td><a href=appView_stages.html?aID={{aID}}>STAGES</a></td>
+			<td><a href=appView_feedback.html?aID={{aID}}>FEEDBACK</a></td>
+			</tr>
+		</table>
 	</td></tr>
 	<tr><td colspan=2>
 		{% block editor %} {% endblock %}
@@ -32,4 +32,5 @@
 			{% block list %} {% endblock %} 
 	</td></tr>
 </table>
+<br><br>
 {% endblock %}

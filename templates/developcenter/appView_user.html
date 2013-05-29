@@ -4,52 +4,42 @@
 
 {% block list %} 
 <script>
- $(document).ready(function(){
- 	$('.activeTime').each(function(index){
- 		at = Number($(this).attr('activeTime'))
- 		at = at/(60*60)
- 		if(at>48)at=48
- 		color = parseInt(at/(48)*255)
- 		$(this).css('background-color','rgb(255,'+color+','+color+')')
+ var activeTime = function(data,cls){
+ 	lastdate = timeToDate(data['lastdate'])
+ 	at = data['lastdate']-data['joindate']
+	at = at/(60*60)
+ 	if(at>48)at=48
+ 	color = parseInt(at/(48)*255)
+ 	return '<td style="background-color:rgb(255,'+color+','+color+')">'+lastdate+'</td>'
+ }
 
- 	})
- })
+ var userlink = function(data,cls){
+ 	 return '<td><a href=appView_log.html?aID={{aID}}&filterfield=auid&filtervalue='+data["id"]+'>log</a> / '
+			+'<a href=appView_rank.html?aID={{aID}}&auser='+data["id"]+'> score</a> / '
+			+'<a href=appView_feedback.html?aID={{aID}}&filterfield=sender&filtervalue='+data["id"]+'>feedback</a></td>'
+ }
 </script>
-		<table width=100% border=1>
+
+	<table class="datalist" source="appView_data.html" db="DB_AppUser" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
 			<tr>
-				<td>no</td>
-				<td>version</td>
-				<td>nick</td>
-				<td>flag</td>
-				<td>udid</td>
-				<td>requests</td>
-				<td>lastConnect</td>
-				<td>joindate</td>
-				<td>loginCount</td>
-				<td></td>
+				<th field="uid">userid</th>
+				<th field="id">appuserid</th>
+				<th field="version">version</th>
+				<th field="grade" editor="text">grade</th>
+				<th field="nick">nick</th>
+				<th field="flag">flag</th>
+				<th field="requests" convert="jsondata" editor="jsonform">requests</th>
+				<th computeField="on" computeFunc="activeTime">lastConnect</th>
+				<th field="joindate" convert="timeToDate">joindate</th>
+				<th field="logincount">loginCount</th>
+				<th computeField="on" computeFunc="userlink">action</th>
 			</tr>
-		{% for appuser in userList %}
-			<tr>
-				<td>{{appuser.key.id}}</td>
-				<td>{{appuser.version}}</td>
-				<td>{{appuser.nick}}</td>
-				<td>{{appuser.flag}}</td>
-				<td>{{appuser.udid}}</td>
-				<td>{{appuser.requests}}</td>
-				<td class="activeTime" activeTime="{{appuser.activeTime}}">
-					{{appuser.lastDate}}
-				</td>
-				<td>
-					{{appuser.joinDate}}
-				</td>
-				<td>{{appuser.loginCount}}</td>
-				<td><a href=/developcenter/appView_log.html?aID={{aID}}&auser={{appuser.key.id}}>log</a>
-				<a href=/developcenter/appView_rank.html?aID={{aID}}&auser={{appuser.key.id}}>rank</a>
-				</td>
-			</tr>
-		{%endfor%}
+	</thead>
+	<tbody>
+	</tbody>
 	</table>
-	{% if more %}
-		<a href=/developcenter/appView_user.html?aID={{aID}}&cursor={{next_curs.urlsafe}}&limit={{limit}}>next</a>
-	{% endif %}
+
+
+		
 {% endblock %}

@@ -15,6 +15,12 @@ indexes:
   - name: developer
   - name: scoresSortValue
 
+- kind: DB_AppFeedback
+  properties:
+  - name: sender
+  - name: createTime
+    direction: desc
+
 - kind: DB_AppFlagScore
   properties:
   - name: date

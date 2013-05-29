@@ -55,33 +55,26 @@ $(document).ready(function() {
 	{% if msg %}
 {{msg}}
 	{% else %}
-		<table width=100% border=1>
+
+
+	<table class="datalist" source="appView_data.html" db="DB_AppNotice" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
+
 			<tr>
-				<td>no</td>
-				<td>category</td>
-				<td>title</td>
-				<td>content</td>
-				<td>userdata</td>
-				<td>platform</td>
-				<td>time</td>
-				<td>hit</td>
+				<th field="id">no</th>
+				<th field="category" editor="text">category</th>
+				<th field="title" editor="text">title</th>
+				<th field="content" convert="jsondata" editor="jsonform">content</th>
+				<th field="userdata" convert="jsondata" editor="jsonform">userdata</th>
+				<th field="platform" modify="on">platform</th>
+				<th field="createtime" convert="timeToDate">time</th>
+				<th field="count">hit</th>
+				<th deletebutton="on">del</th>
 			</tr>
-		{% for notice in noticeList %}
-			<tr>
-				<td>{{notice.key.id}}</td>
-				<td>{{notice.category}}</td>
-				<td>{{notice.title}}</td>
-				<td>{{notice.content}}</td>
-				<td>{{notice.userdata}}</td>
-				<td>{{notice.platform}}</td>
-				<td>
-					{{notice.createTime}}
-				</td>
-				<td>
-					{{notice.count}}
-				</td>
-			</tr>
-		{%endfor%}
+	</thead>
+	<tbody>
+	</tbody>
 	</table>
+
 	{% endif %}
 {% endblock %}

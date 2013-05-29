@@ -8,29 +8,97 @@ import json
 import logging
 from google.appengine.api import memcache
 import datetime
+import webapp2
 
-CLOUDSQL_INSTANCE = 'graphdogserver:graphdog'
-CLOUDSQL_DBNAME = None
+GD_CLOUDSQL_INSTANCE_DEFAULT = 'graphdogserver:graphdog'
+#GD_CLOUDSQL_DBNAME = None
+#GD_CLOUDSQL_CONNECT = None
 
 def setSqlConnect(aid=None,dbname=None,instance=None):
-	global CLOUDSQL_INSTANCE
-	global CLOUDSQL_DBNAME
+
+	#global GD_CLOUDSQL_INSTANCE
+	#global GD_CLOUDSQL_DBNAME
+	#global GD_CLOUDSQL_CONNECT
+
+	app = webapp2.get_app()
 
 	if aid:
-		CLOUDSQL_DBNAME = 'APP_'+aid
+		app.request.registry['GD_CLOUDSQL_DBNAME'] = 'APP_'+aid
+		#GD_CLOUDSQL_DBNAME = 'APP_'+aid
 
 	if dbname:
-		CLOUDSQL_DBNAME = dbname
+		#GD_CLOUDSQL_DBNAME = dbname
+		app.request.registry['GD_CLOUDSQL_DBNAME'] = dbname
 	
 	if instance:
-		CLOUDSQL_INSTANCE = instance
+		GD_CLOUDSQL_INSTANCE = instance
+		app.request.registry['GD_CLOUDSQL_INSTANCE'] = instance
 
-def sqlConnect(aid=None,dbname=None,instance=None):
+def sqlConnect():
+
+
+
+	#logging.info('setsqlConnect')
+	#setSqlConnect(aid,dbname,instance)
+	#return rdbms.connect(instance=GD_CLOUDSQL_INSTANCE, database=GD_CLOUDSQL_DBNAME, charset='utf8')
+	#logging.info('if not GD_CLOUDSQL_CONNECT')
+	#logging.info(GD_CLOUDSQL_CONNECT)
+
+	app = webapp2.get_app()
+	try:
+		GD_CLOUDSQL_CONNECT = app.request.registry['GD_CLOUDSQL_CONNECT']
+	except:
+		GD_CLOUDSQL_INSTANCE = app.request.registry['GD_CLOUDSQL_INSTANCE']
+		GD_CLOUDSQL_DBNAME = app.request.registry['GD_CLOUDSQL_DBNAME']
+		GD_CLOUDSQL_CONNECT = rdbms.connect(instance=GD_CLOUDSQL_INSTANCE, database=GD_CLOUDSQL_DBNAME, charset='utf8')
+		app.request.registry['GD_CLOUDSQL_CONNECT'] = GD_CLOUDSQL_CONNECT
+
+	return GD_CLOUDSQL_CONNECT
+
+	'''if not GD_CLOUDSQL_CONNECT:
+		GD_CLOUDSQL_CONNECT = rdbms.connect(instance=GD_CLOUDSQL_INSTANCE, database=GD_CLOUDSQL_DBNAME, charset='utf8')
+
+	#logging.info('try GD_CLOUDSQL_CONNECT.CheckOpen()')
+	#try:
+	#	GD_CLOUDSQL_CONNECT.CheckOpen()
+	#except:
+	#	logging.info('reconnect')
+	#	GD_CLOUDSQL_CONNECT = rdbms.connect(instance=GD_CLOUDSQL_INSTANCE, database=GD_CLOUDSQL_DBNAME, charset='utf8')
+
+	#logging.info('return GD_CLOUDSQL_CONNECT')
+	#logging.info(GD_CLOUDSQL_CONNECT)
+
+	import weakref
+
+	ref_gdcc = weakref.ref(GD_CLOUDSQL_CONNECT)
+	return ref_gdcc()'''
+
+def newSqlConnect(aid=None,dbname=None,instance=None):
 	setSqlConnect(aid,dbname,instance)
-	return rdbms.connect(instance=CLOUDSQL_INSTANCE, database=CLOUDSQL_DBNAME, charset='utf8')
+	sqlConnect()
+
+def sqlClose():
+	#global GD_CLOUDSQL_INSTANCE
+	#global GD_CLOUDSQL_DBNAME
+	#global GD_CLOUDSQL_CONNECT
+	app = webapp2.get_app()
+
+	try:
+		GD_CLOUDSQL_CONNECT = app.request.registry['GD_CLOUDSQL_CONNECT']
+	except:
+		GD_CLOUDSQL_CONNECT = None
+
+	if GD_CLOUDSQL_CONNECT:
+		try:
+			GD_CLOUDSQL_CONNECT.close()
+		except:
+			logging.info('close sql error')
+
+		GD_CLOUDSQL_CONNECT=None
+		app.request.registry['GD_CLOUDSQL_CONNECT'] = None
 
 def createDatabaseAndConnect(aid=None,dbname=None,instance=None):
-		conn =sqlConnect(dbname='graphdog')
+		conn =newSqlConnect(dbname='graphdog')
 		cursor = conn.cursor()
 
 		if aid:
@@ -40,7 +108,9 @@ def createDatabaseAndConnect(aid=None,dbname=None,instance=None):
 		cursor.execute(query)
 		createQuery = conn.commit()
 		#logging.info('commit sql')
-		conn.close()
+		#conn.close()
+
+		sqlClose()
 
 		setSqlConnect(dbname=dbname,instance=instance)
 
@@ -94,26 +164,31 @@ class DB_AppScores():
 
 		cursor.execute(query)
 		createQuery = conn.commit()
-		conn.close()
+
+		#cursor.close()
+		#conn.close()
+
 
 	@staticmethod
 	def get(findID=None):
 		conn = sqlConnect()
 		cursor = conn.cursor()
-		query = 'SELECT no, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppScore WHERE no=%s' % findID
+		query = 'SELECT no, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppScore WHERE no=%s limit 1' % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		return DB_AppScores.set(row)
 
 	@staticmethod
 	def get_or_insert(findID=None):
 		conn = sqlConnect()
 		cursor = conn.cursor()
-		query = 'SELECT no, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppScore WHERE no=%s' % findID
+		query = 'SELECT no, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppScore WHERE no=%s limit 1' % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		if row:
 			return DB_AppScores.set(row)
 		else:
@@ -131,7 +206,8 @@ class DB_AppScores():
 
 		cursor.execute(query)
 		rows = cursor.fetchall()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		return rows
 
 	@staticmethod
@@ -144,7 +220,8 @@ class DB_AppScores():
 
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		return row[0]
 	
 	@staticmethod
@@ -183,11 +260,13 @@ class DB_AppScores():
 							(self.auInfo,self.nick,self.flag,self.sTime,self.uTime,self.eTime,self.gType,self.score,json.dumps(self.userdata,encoding="utf-8",ensure_ascii=False)
 							))
 			conn.commit()
+			#cursor = conn.cursor()
 
-			cursor = conn.cursor()
-			cursor.execute('SELECT LAST_INSERT_ID() FROM AppScore')
+			cursor.execute('SELECT LAST_INSERT_ID() FROM AppScore limit 1')
 			row = cursor.fetchone()
-			conn.close()
+			cursor.close()
+			#conn.close()
+
 			if row:
 				self.asid=row[0]
 
@@ -208,7 +287,8 @@ class DB_AppScores():
 					self.asid
 				))
 			conn.commit()
-			conn.close()
+			cursor.close()
+			#conn.close()
 
 	def to_dict(self):
 		_new = {}
@@ -269,26 +349,30 @@ class DB_AppMaxScores():
 				"""
 		cursor.execute(query)
 		createQuery = conn.commit()
-		conn.close()
+		cursor.close()
+		#conn.close()
 
 	@staticmethod
 	def get(findID=None):
 		conn = sqlConnect()
 		cursor = conn.cursor()
-		query = "SELECT no,amsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppMaxScore WHERE amsid='%s'" % findID
+		query = "SELECT no,amsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppMaxScore WHERE amsid='%s' limit 1" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		return DB_AppMaxScores.set(row)
 
 	@staticmethod
 	def get_or_insert(findID=None):
 		conn = sqlConnect()
 		cursor = conn.cursor()
-		query = "SELECT no,amsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppMaxScore WHERE amsid='%s'" % findID
+		query = "SELECT no,amsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata FROM AppMaxScore WHERE amsid='%s' limit 1" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
+
 		if row:
 			return DB_AppMaxScores.set(row)
 		else:
@@ -306,7 +390,9 @@ class DB_AppMaxScores():
 
 		cursor.execute(query)
 		rows = cursor.fetchall()
-		conn.close()
+		cursor.close()
+		#conn.close()
+
 		return rows
 
 	@staticmethod
@@ -320,7 +406,9 @@ class DB_AppMaxScores():
 
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
+
 		return row[0]
 	
 	@staticmethod
@@ -361,9 +449,10 @@ class DB_AppMaxScores():
 							))
 			
 			conn.commit()
-			cursor.execute('SELECT LAST_INSERT_ID() FROM AppMaxScore')
+			cursor.execute('SELECT LAST_INSERT_ID() FROM AppMaxScore limit 1')
 			row = cursor.fetchone()
-			conn.close()
+			cursor.close()
+			#conn.close()
 			if row:
 				self.no=row[0]
 
@@ -385,7 +474,8 @@ class DB_AppMaxScores():
 				))
 
 			conn.commit()
-			conn.close()
+			cursor.close()
+			#conn.close()
 
 	def to_dict(self):
 		_new = {}
@@ -449,26 +539,29 @@ class DB_AppWeeklyScores():
 				"""
 		cursor.execute(query)
 		createQuery = conn.commit()
-		conn.close()
-		
+		cursor.close()
+		#conn.close()
+
 	@staticmethod
 	def get(findID=None):
 		conn = sqlConnect()
 		cursor = conn.cursor()
-		query = "SELECT no,awsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata, week FROM AppWeeklyScore WHERE awsid='%s'" % findID
+		query = "SELECT no,awsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata, week FROM AppWeeklyScore WHERE awsid='%s' limit 1" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
 		return DB_AppWeeklyScores.set(row)
 
 	@staticmethod
 	def get_or_insert(findID=None):
 		conn = sqlConnect()
 		cursor = conn.cursor()
-		query = "SELECT no,awsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata, week FROM AppWeeklyScore WHERE awsid='%s'" % findID
+		query = "SELECT no,awsid, auInfo, nick, flag, sTime, uTime, eTime, gType, score, userdata, week FROM AppWeeklyScore WHERE awsid='%s' limit 1" % findID
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
+
 		if row:
 			return DB_AppWeeklyScores.set(row)
 		else:
@@ -486,7 +579,8 @@ class DB_AppWeeklyScores():
 
 		cursor.execute(query)
 		rows = cursor.fetchall()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		return rows
 
 	@staticmethod
@@ -499,7 +593,8 @@ class DB_AppWeeklyScores():
 
 		cursor.execute(query)
 		row = cursor.fetchone()
-		conn.close()
+		cursor.close()
+		#conn.close()
 		return row[0]
 	
 	@staticmethod
@@ -541,11 +636,12 @@ class DB_AppWeeklyScores():
 							tp)
 			conn.commit()
 
-			cursor.execute('SELECT LAST_INSERT_ID() FROM AppWeeklyScore')
+			cursor.execute('SELECT LAST_INSERT_ID() FROM AppWeeklyScore limit 1')
 			row = cursor.fetchone()
+			cursor.close()
+			#conn.close()
 			if row:
 				self.no=row[0]
-			conn.close()
 
 		else:
 			conn = sqlConnect()
@@ -565,7 +661,8 @@ class DB_AppWeeklyScores():
 					self.no
 				))
 			conn.commit()
-			conn.close()
+			cursor.close()
+			#conn.close()
 
 	def to_dict(self):
 		_new = {}
@@ -607,17 +704,14 @@ class DB_App(ndb.Model):
 	store = ndb.JsonProperty(default={"ios":"storeid","android":"storeid"})
 	descript = ndb.JsonProperty(default={"default":"descript"})
 	cpiReward = ndb.JsonProperty(default={"default":100})
-	dbInstance= ndb.StringProperty(default=CLOUDSQL_INSTANCE)
+	dbInstance= ndb.StringProperty(default=GD_CLOUDSQL_INSTANCE_DEFAULT)
 	isPutOn = False
 
 	def putOn(self):
-		logging.info('putOn')
 		self.isPutOn = True
 
 	def doPut(self):
-		logging.info('doPut')
 		if self.isPutOn==True:
-			logging.info('doPut complete')
 			self.put()
 
 class DB_User(ndb.Model):
@@ -643,6 +737,7 @@ class DB_AppUser(ndb.Model):
 	requests = ndb.JsonProperty(default = [])
 	version = ndb.IntegerProperty(default=0)
 	loginCount = ndb.IntegerProperty(default=1)
+	grade = ndb.StringProperty(default="")
 
 	def calcActiveTime(self):
 		if self.lastDate and self.joinDate:
@@ -654,15 +749,26 @@ class DB_AppUser(ndb.Model):
 	isPutOn = False
 
 	def putOn(self):
-		logging.info('putOn')
 		self.isPutOn = True
 
 	def doPut(self):
-		logging.info('doPut')
 		if self.isPutOn==True:
-			logging.info('doPut complete')
 			self.put()
 
+	def toResult(self):
+		_new = self.to_dict()
+		if self.uInfo:
+			_new['uid']=self.uInfo.id()
+		_new['id']=self.key.id()
+		_new['joindate']=time.mktime(self.joinDate.timetuple())
+		_new['lastdate']=time.mktime(self.lastDate.timetuple())
+		_new['logincount']=self.loginCount
+
+		del _new['loginCount']
+		del _new['uInfo']
+		del _new['joinDate']
+		del _new['lastDate']
+		return _new
 
 
 class DB_AppVersions(ndb.Model):
@@ -671,6 +777,12 @@ class DB_AppVersions(ndb.Model):
 	platform = ndb.StringProperty(default="")
 	createTime = ndb.DateTimeProperty(auto_now_add=True)
 	comment = ndb.StringProperty(default="")
+	def toResult(self):
+		_new = self.to_dict()
+		_new['id']=self.key.id()
+		_new['createtime']=time.mktime(self.createTime.timetuple())
+		del _new['createTime']
+		return _new
 
 class DB_AppStats(ndb.Model):
 	year = ndb.IntegerProperty()
@@ -678,41 +790,60 @@ class DB_AppStats(ndb.Model):
 	day = ndb.IntegerProperty()
 	ymd = ndb.IntegerProperty()
 	statsData = ndb.JsonProperty(default={})
+	
+	def toResult(self):
+		_new = self.to_dict()
+		if self.key:
+			_new['id']=self.key.id()
+		return _new
 
 	@staticmethod
 	def getInMC():
+		#today = "20110606"
+		#todayh = "2013052201"
 		today = datetime.date.today().strftime("%Y%m%d")
+		todayh = time.strftime("%Y%m%d%H", time.localtime(time.time()))
 		data = memcache.get("stats")		
 		when = memcache.get("stats_when")
-
+		whenh = memcache.get("stats_whenh")
 		if not when:
 			when = today
+		if not whenh:
+			whenh = todayh
 
 		if not data:
 			data = {}
 
-		if today != when:
+		if todayh != whenh:
 			#데이터저장 when꺼를들고오기~~
 			stats = DB_AppStats.get_or_insert("stats_"+when)
 			stats.year = int(when[0:4])
 			stats.month = int(when[4:6])
 			stats.day = int(when[6:8])
 			stats.ymd = int(when)
-			stats.statsData.update(data)
+			stats.statsData,data = DB_AppStats.savesafe(stats.statsData,data)
+
 			stats.put()
 			#새값생성
-			newdata={}
-			DB_AppStats.setInMC(newdata)
-			return newdata
+			if today != when:
+				newdata={}
+				DB_AppStats.setInMC(newdata)
+				return newdata
+			else:
+				DB_AppStats.setInMC(data)
+
 		return data
 
 	@staticmethod
 	def setInMC(data):
 		today = datetime.date.today().strftime("%Y%m%d")
+		todayh = time.strftime("%Y%m%d%H", time.localtime(time.time()))
+		#today = "20110606"
+		#todayh = "2011060603"
 		memcache.set("stats",data)
 		memcache.set("stats_when",today)
-
-
+		memcache.set("stats_whenh",todayh)
+		
 	@staticmethod
 	def countStatHour(category,count=1):
 		stats = DB_AppStats.getInMC()
@@ -727,7 +858,7 @@ class DB_AppStats(ndb.Model):
 		except KeyError:
 			stats[category][hour]=count
 		DB_AppStats.setInMC(stats)
-
+		
 	@staticmethod
 	def countStatKey(category,key,count=1):
 		stats = DB_AppStats.getInMC()
@@ -740,7 +871,37 @@ class DB_AppStats(ndb.Model):
 			stats[category][key]+=count
 		except KeyError:
 			stats[category][key]=count
+		
 		DB_AppStats.setInMC(stats)
+		
+	@staticmethod
+	def savesafe(stats,ns):
+		if not stats:
+			stats={}
+
+		for category in ns:
+			if type(ns[category])==list:
+				if not stats.get(category):
+					stats[category] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+				for idx, val in enumerate(ns[category]):
+					if stats[category][idx] < ns[category][idx]:
+						stats[category][idx]=ns[category][idx]
+					elif stats[category][idx] > ns[category][idx]:
+						stats[category][idx]+=ns[category][idx]
+						ns[category][idx]=0
+
+			elif type(ns[category])==dict:
+				if not stats.get(category):
+					stats[category] = {} 
+				for key in ns[category]:
+					if not stats[category].get(key):
+						stats[category][key] = 0
+
+					stats[category][key]+=ns[category][key]
+					ns[category][key]=0		
+
+		return (stats,ns)
 
 class DB_AppLog(ndb.Model):
 	auInfo = ndb.KeyProperty(DB_AppUser)
@@ -749,40 +910,17 @@ class DB_AppLog(ndb.Model):
 	text = ndb.StringProperty(default="")
 	time = ndb.DateTimeProperty(auto_now_add=True)
 
-class DB_AppScore(ndb.Model):
-
-	def computePlayTime(self):
-		if self.eTime and self.uTime:
-			return self.eTime-self.uTime
-		else:
-			return 0
-	auInfo=ndb.KeyProperty(DB_AppUser)
-	nick=ndb.StringProperty()
-	flag=ndb.StringProperty()
-	sTime=ndb.IntegerProperty(default=0)
-	uTime=ndb.IntegerProperty(default=0) 
-	eTime=ndb.IntegerProperty(default=0) 
-	gType=ndb.StringProperty(default='default')
-	score=ndb.IntegerProperty(default=0)
-	isOver=ndb.BooleanProperty(default=False)
-	userdata = ndb.JsonProperty(default={})
-	playTime = ndb.ComputedProperty(computePlayTime)
-	
 	def toResult(self):
 		_new = self.to_dict()
-		_new['auid']=self.auInfo.id()
-		_new['isover']=_new['isOver']
-		_new['etime']=_new['eTime']
-		_new['stime']=_new['uTime']
-		_new['type']=_new['gType']
-		_new['asid']=self.key.id()
-		del _new['isOver']
+
+		if self.auInfo:
+			_new['auid']=self.auInfo.id()
+		_new['id']=self.key.id()
+		_new['time']=time.mktime(self.time.timetuple())
 		del _new['auInfo']
-		del _new['eTime']
-		del _new['sTime']
-		del _new['uTime']
-		del _new['gType']
 		return _new
+
+
 
 
 class DB_AppFlagScore(ndb.Model):
@@ -798,52 +936,6 @@ class DB_AppFlagScore(ndb.Model):
 		del _new['gType']
 		return _new
 
-class DB_AppMaxScore(ndb.Model):
-	auInfo=ndb.KeyProperty(DB_AppUser)
-	nick=ndb.StringProperty()
-	flag=ndb.StringProperty()
-	gType=ndb.StringProperty()
-	score=ndb.IntegerProperty()
-	sTime=ndb.IntegerProperty()
-	eTime=ndb.IntegerProperty()
-	userdata = ndb.JsonProperty(default={})
-	
-	def toResult(self):
-		_new = self.to_dict()
-		_new['auid']=self.auInfo.id()
-		_new['etime']=_new['eTime']
-		_new['stime']=_new['sTime']
-		_new['type']=_new['gType']
-		_new['awsid']=self.key.id()
-		del _new['auInfo']
-		del _new['eTime']
-		del _new['sTime']
-		del _new['gType']
-		return _new
-
-class DB_AppWeeklyScore(ndb.Model):
-	auInfo=ndb.KeyProperty(DB_AppUser)
-	nick=ndb.StringProperty()
-	flag=ndb.StringProperty()
-	week=ndb.IntegerProperty()
-	gType=ndb.StringProperty()
-	score=ndb.IntegerProperty()
-	sTime=ndb.IntegerProperty()
-	eTime=ndb.IntegerProperty()
-	userdata = ndb.JsonProperty(default={})
-
-	def toResult(self):
-		_new = self.to_dict()
-		_new['auid']=self.auInfo.id()
-		_new['etime']=_new['eTime']
-		_new['stime']=_new['sTime']
-		_new['type']=_new['gType']
-		_new['awsid']=self.key.id()
-		del _new['auInfo']
-		del _new['eTime']
-		del _new['sTime']
-		del _new['gType']
-		return _new
 
 class DB_AppNotice(ndb.Model):
 	title=ndb.StringProperty(default="")
@@ -853,13 +945,13 @@ class DB_AppNotice(ndb.Model):
 	platform = ndb.StringProperty(default="")
 	createTime = ndb.IntegerProperty(default=0)
 	count = ndb.IntegerProperty(default=0)
-
-class DB_AppRequest(ndb.Model):
-	receiver = ndb.KeyProperty()
-	sender = ndb.KeyProperty()
-	category = ndb.StringProperty(default="")
-	content = ndb.StringProperty(default="")
-	userdata = ndb.JsonProperty(default={})
+	
+	def toResult(self):
+		_new = self.to_dict()
+		_new['createtime']=_new['createTime']
+		_new['id']=self.key.id()
+		del _new['createTime']
+		return _new
 
 class DB_AppGiftcode(ndb.Model):
 	code = ndb.StringProperty(default="")
@@ -869,6 +961,15 @@ class DB_AppGiftcode(ndb.Model):
 	createTime = ndb.IntegerProperty()
 	useTime = ndb.IntegerProperty(default=0)
 	userdata = ndb.JsonProperty(default={})
+	def toResult(self):
+		_new = self.to_dict()
+		_new['createtime']=_new['createTime']
+		_new['usetime']=_new['useTime']
+		_new['id']=self.key.id()
+		if self.user: _new['user']=self.user.id()
+		del _new['createTime']
+		del _new['useTime']
+		return _new
 
 class DB_AppImage(ndb.Model):
 	imageName = ndb.StringProperty(default="")
@@ -880,12 +981,27 @@ class DB_AppStage(ndb.Model):
 	category = ndb.StringProperty(default="")
 	userdata = ndb.JsonProperty(default={})
 	createTime = ndb.DateTimeProperty(auto_now_add=True)
+	
+	def toResult(self):
+		_new = self.to_dict()
+		_new['id']=self.key.id()
+		_new['createtime']=time.mktime(self.createTime.timetuple())
+		del _new['createTime']
+		return _new
 
 class DB_AppFeedback(ndb.Model):
-	sender = ndb.JsonProperty(default = {})
+	sender = ndb.KeyProperty(DB_AppUser)
 	category = ndb.StringProperty(default="")
 	content = ndb.StringProperty(default="")
+	state = ndb.StringProperty(default="")
+	mode = ndb.StringProperty(default="receive")
 	userdata = ndb.JsonProperty(default = {})
 	createTime = ndb.DateTimeProperty(auto_now_add=True)
-	
 
+	def toResult(self):
+		_new = self.to_dict()
+		_new['id']=self.key.id()
+		_new['sender']=self.sender.id()
+		_new['createtime']=time.mktime(self.createTime.timetuple())
+		del _new['createTime']
+		return _new

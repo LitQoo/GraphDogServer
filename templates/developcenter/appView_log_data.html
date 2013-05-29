@@ -10,5 +10,5 @@
 			</tr>
 {%endfor%}
 {% if more %}
-		<tr id="nexttr"><td colspan=5><a href="#a" id="nextbtn" nextinfo="aID={{aID}}&category={{category}}&auser={{auser}}&cursor={{next_curs.urlsafe}}&limit={{limit}}">next</a></td></tr>
+		<tr id="nexttr" class="nexttr" nextinfo="aID={{aID}}&category={{category}}&auser={{auser}}&cursor={{next_curs.urlsafe}}&limit={{limit}}"><td colspan=5><a href="#a" id="nextbtn">NEXT</a></td></tr>
 {% endif %}

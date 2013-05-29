@@ -4,62 +4,17 @@
 {% endblock %}
 
 {% block list %} 
-<script>
-	$(document).ready(function(){
 
-		replaceStr = function(str){
-		  return str.replace(/u\'/g, '"').replace(/\'/g, '"')
-		}
+	<table class="datalist" source="appView_data.html" db="DB_AppStats" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
 
-		$(".statData").each(function(index){
-			strs = replaceStr($(this).html())
-			stats =  JSON.parse(strs)
-			text = "<table border=1><tr><td>hour</td>"
-			for(num=0;num<24;num++)
-				text+="<td width=40>"+num+"</td>"
-			text += "<td>total</td></tr>"
-			for(key in stats){
-				if(stats[key][0] == null)continue
-
-				text += "<tr><td>"+key+"</td>"
-				total=0
-				for(num=0;num<24;num++){
-					text+="<td>"+stats[key][num]+"</td>"
-					total+=stats[key][num]
-				}
-				text +="<td>"+total+"</td></tr>"
-			}
-			text+="</table>"
-			
-			text+="<table border=1><tr>"
-			for(key in stats){
-				if(stats[key][0] != null)continue
-				text+="<td><table border=1><tr><td colspan=2>"+key+"</td></tr>"
-				for(subkey in stats[key]){
-					text+="<tr><td>"+subkey+"</td><td>"+stats[key][subkey]+"</td></tr>"	
-				}
-				text+="</table></td>"
-			}
-			text+="</tr></table>"
-			$(this).html(text)
-		})
-
-	})
-</script>
-		<table width=100% border=1>
 			<tr>
-				<td>date</td>
-				<td>stats</td>
+				<th field="ymd">date</th>
+				<th field="statsData" convert="jsonToStatsTable">stats</th>
 			</tr>
-		{% for stat in statList %}
-			<tr>
-				<td>{{stat.ymd}}</td>
-				<td><div class="statData">{{stat.statsData|safe}}</div></td>
-
-			</tr>
-		{%endfor%}
+	</thead>
+	<tbody>
+	</tbody>
 	</table>
-	{% if more %}
-		<a href=/developcenter/appView_user.html?aID={{aID}}&cursor={{next_curs.urlsafe}}&limit={{limit}}>next</a>
-	{% endif %}
+
 {% endblock %}

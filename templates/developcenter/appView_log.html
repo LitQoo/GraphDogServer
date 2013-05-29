@@ -1,6 +1,5 @@
 {% extends 'appView_base.html' %}
 {% block editor %}
-loglist
 {% endblock %}
 
 {% block list %} 
@@ -12,31 +11,20 @@ loglist
 		{% endif %}
 
 
-<script>  
-$(document).ready(function(){               //ajax실행중 loading글씨 보이기  
-	var nextlist = function(){
-		console.log($("#nextbtn").attr("nextinfo"))
-   		$.get("appView_log_data.html", $("#nextbtn").attr("nextinfo"), function(data){ 
-   					$('#nexttr').remove()
-   					$('#loglist').append(data)     //div1에 내용 넣기  
-   					$('#nextbtn').click(nextlist)
-			 }  
-		); 
-   }
+	<table class="datalist" source="appView_data.html" db="DB_AppLog" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
 
-   nextlist()
-
-});  
-</script>  
-	<table width=100% border=1 id="loglist">
 			<tr>
-				<td>user</td>
-				<td>version</td>
-				<td>category</td>
-				<td>log</td>
-				<td>time</td>
+				<th field="auid" index="on">user</th>
+				<th field="version">version</th>
+				<th field="category" index="on">category</th>
+				<th field="text" editor="text">log</th>
+				<th field="time" convert="timeToDate">time</th>
+				<th deletebutton="on">del</th>
 			</tr>
-		<tr id="nexttr"><td colspan=5><a href="#a" id="nextbtn" nextinfo="aID={{aID}}&category={{category}}&auser={{auser}}&cursor={{next_curs.urlsafe}}&limit={{limit}}">next</a></td></tr>
+	</thead>
+	<tbody>
+	</tbody>
 	</table>
 	
 

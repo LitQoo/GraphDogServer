@@ -4,7 +4,7 @@
 #	stages 추가 2013.5.9
 #	appuser에 version 추가 2013.5.9
 #	log 에 version추가  2013.5.9
-#
+#	aInfo 멤캐쉬에서 불러오기
 #
 
 import os
@@ -33,6 +33,13 @@ from SessionBaseHandler import *
 
 
 class CommandHandler(SessionBaseHandler):
+	def getAppInfo(self,aID):
+		aInfo = memcache.get("appinfo_"+aID)
+		if not aInfo:
+			aInfo = DB_App.get_by_id(aID)
+			memcache.set("appinfo_"+aID,aInfo)
+		return aInfo
+
 	def post(self):
 		
 		logging.info('self.request')
@@ -60,7 +67,8 @@ class CommandHandler(SessionBaseHandler):
 		namespace_manager.set_namespace(gdNamespace)
 		#find app
 		try:
-			aInfo = DB_App.get_by_id(aID)
+			#aInfo = DB_App.get_by_id(aID)
+			aInfo = self.getAppInfo(aID)
 		except Exception, e:
 			self.printError("dont find app1",100,aInfo.secretKey)
 			return
@@ -78,6 +86,10 @@ class CommandHandler(SessionBaseHandler):
 			commands = json.loads(cmdtext) #decParam(self.request.get('command'))
 		
 		tokens = CommandHandler.decToken(token,aInfo.secretKey)
+		if not tokens.get('createTime'):
+			logging.critical('hack')
+			self.response.write('network state error')
+			return
 
 		namespace_manager.set_namespace(appNamespace)
 
@@ -133,6 +145,11 @@ class CommandHandler(SessionBaseHandler):
 					DB_AppStats.countStatKey('hitPlatform',tokens.get('platform'))
 					DB_AppStats.countStatKey('hitLanguage',tokens.get('lang'))
 					DB_AppStats.countStatKey('version',str(version))
+					
+					if not auInfo.loginCount:
+						auInfo.loginCount=1
+					else:
+						auInfo.loginCount+=1
 				# name , flag update after check
 				#if tokens.get('nick') and tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
@@ -150,10 +167,7 @@ class CommandHandler(SessionBaseHandler):
 				if auInfo.version != int(version):
 					DB_AppStats.countStatHour('update')
 				
-				if not auInfo.loginCount:
-					auInfo.loginCount=1
-				else:
-					auInfo.loginCount+=1
+
 
 				auInfo.version = int(version)
 				auInfo.putOn()
@@ -305,6 +319,8 @@ class CommandHandler(SessionBaseHandler):
 			#return
 
 
+		setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
+				
 		for commandID,command in commands.items():
 			logging.info('########################### start command ###############################')
 
@@ -426,7 +442,6 @@ class CommandHandler(SessionBaseHandler):
 
 			#action startscores
 			if 'startscores' in actions:#~ ##########################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				sortValue=aInfo.scoresSortValue
 			#param ->  type, score, userdata, 
 				gType = param.get('type')
@@ -489,7 +504,6 @@ class CommandHandler(SessionBaseHandler):
 
 
 			if 'getscores' in actions: ##########################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				
 				asInfo2 = DB_AppScores.get(int(self.session.get('asID2')))
 
@@ -658,7 +672,6 @@ class CommandHandler(SessionBaseHandler):
 
 				
 			if 'getmaxscores' in actions: ###############################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				if not gType:
 					gType = 'default'
@@ -706,7 +719,6 @@ class CommandHandler(SessionBaseHandler):
 
 			if 'getweeklyscores' in actions: ################################################################################
 
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				if not gType:
 					gType = 'default'
@@ -922,6 +934,9 @@ class CommandHandler(SessionBaseHandler):
 						logging.info('installed app continue')
 						continue
 
+					if not cpi.store.get(tokens.get('platform')):
+						logging.info('dont support platform')
+						continue
 					# 2. cpievent 중인가 검사
 					#iscping = False
 					#if type(user.CPIEvents)==list:
@@ -1075,7 +1090,7 @@ class CommandHandler(SessionBaseHandler):
 					result['state']='ok'
 
 			if 'getuserdata' in actions:#######################################################################################
-				result['userdata']=auInfo.userdata
+				result['data']=auInfo.toResult()
 				result['state']='ok'
 
 
@@ -1083,7 +1098,7 @@ class CommandHandler(SessionBaseHandler):
 				limit = param.get('limit')
 				if not limit:
 					limit = 10
-				category = param.get('limit')
+				category = param.get('category')
 				stage = param.get('stage')
 				if not category:
 					category = "default"
@@ -1091,11 +1106,20 @@ class CommandHandler(SessionBaseHandler):
 					stageList = DB_AppStage.query(ndb.AND(DB_AppStage.category==category)).fetch(limit)
 				else:
 					stageList = DB_AppStage.query(ndb.AND(DB_AppStage.category==category,DB_AppStage.stage==stage)).fetch(limit)
-				result['list']=stageList
+				
+
+				result['list']=[]
+				for row in stageList:
+					newdict = {}
+					newdict['id']=row.key.id()
+					newdict['stage']=row.stage
+					newdict['category']=row.category
+					newdict['userdata']=row.userdata
+					result['list'].append(newdict)
+		
 				result['state']='ok'
 				
 			if 'setmaxscore' in actions:####################################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				score = int(param.get('score'))
 				if not gType:
@@ -1134,6 +1158,7 @@ class CommandHandler(SessionBaseHandler):
 				result['state']='ok'
 
 		namespace_manager.set_namespace(appNamespace)
+		sqlClose()
 		#put
 		auInfo.doPut()
 

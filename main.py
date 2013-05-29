@@ -71,6 +71,48 @@ def doRender(handler,tname='index.html',values={}):
 #############################################################################
 
 
+class TestHandler(SessionBaseHandler):
+	def p(self,v):
+		self.response.write(str(v)+"<br>")
+
+	def cs(self,stats,ns):
+		for category in stats:
+			if type(stats[category])==list:
+				for idx, val in enumerate(stats[category]):
+					if stats[category][idx] < ns[category][idx]:
+						stats[category][idx]=ns[category][idx]
+						self.p('update list')
+
+			elif type(stats[category])==dict:
+				for key in stats[category]:
+					stats[category][key]+=ns[category][key]
+					ns[category][key]=0		
+
+		self.p('result stats')
+		self.p(stats)
+
+		self.p('result new stats')
+		self.p(ns)
+		self.p('')
+		return (stats,ns)
+
+	def get(self):
+		self.response.write('welcome to test')
+		stats = {'join': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'hit': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'update': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'platform': {'android': 0, 'ios': 0}}
+		ns = {'join': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0], 'hit': [0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 0], 'update': [0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 1, 0, 0, 0, 0], 'platform': {'android': 22, 'ios': 0}}
+
+		self.cs(stats,ns)
+
+		ns = {'join': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 4, 10, 0, 0, 0], 'hit': [0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 0], 'update': [0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 1, 0, 0, 0, 0], 'platform': {'android': 22, 'ios': 0}}
+
+		self.cs(stats,ns)
+
+
+		ns = {'join': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'hit': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'update': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'platform': {'android': 0, 'ios': 0}}
+
+		self.cs(stats,ns)
+
+
 class MainHandler(SessionBaseHandler):
     def get(self):
     	path = self.request.path
@@ -90,10 +132,8 @@ class DevelopCenterHandler(SessionBaseHandler):
 		values = {}
 		user = users.get_current_user()
 		developer={}
-		logging.info('get start')
 		
-		if path == '/developcenter/test':
-			return
+
 
 		if user:
 			developer=ndb.Key('DB_Developer',user.email()).get()
@@ -149,97 +189,172 @@ class DevelopCenterHandler(SessionBaseHandler):
 			appNamespace = 'APP_'+aID
 			aInfo = DB_App.get_by_id(aID)
 			values['aInfo'] = aInfo
-			logging.info(type(values['aInfo'].store))
 			values['aInfo'].store = json.dumps(values.get('aInfo').store,encoding="utf-8",ensure_ascii=False)
 			values['aInfo'].cpiReward = json.dumps(values.get('aInfo').cpiReward,encoding="utf-8",ensure_ascii=False)
 			values['aInfo'].descript = json.dumps(values.get('aInfo').descript,encoding="utf-8",ensure_ascii=False)
 			values['aID']=aID;
+
+			if aInfo.developer != developer.key:
+				return
+
+		if path == '/developcenter/test':
+
+			namespace_manager.set_namespace(appNamespace)
+			'''au = DB_AppUser()
+			au.nick=DevelopCenterHandler.createGiftcode()
+			au.flag=DevelopCenterHandler.createGiftcode()
+			au.udid=DevelopCenterHandler.createGiftcode()
+			au.put()
+			self.response.write('ok')'''
+
+			alog = DB_AppLog()
+			alog.category = 'efg'
+			alog.text = DevelopCenterHandler.createGiftcode()
+			alog.version = 3
+			alog.put()
+
+			return
+
+		filterfield = self.request.get('filterfield')
+		filtervalue = self.request.get('filtervalue')
+		limit = self.request.get('limit')
+		if not limit: limit=30
+		else: limit=int(limit)
+		values['filtervalue'] = filtervalue
+		values['filterfield'] = filterfield
+		values['limit'] = limit
 
 		if path == '/developcenter/appmanager.html':	####################################################################
 			values['appList'] = DB_App.query(DB_App.developer == developer.key).fetch()
 		
 		if path == '/developcenter/appView_version.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['versionList']=DB_AppVersions.query().order(-DB_AppVersions.createTime).fetch()
 
 		if path == '/developcenter/appView_notice.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['noticeList']=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch()
+			
 
 		if path == '/developcenter/appView_user.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			curs = Cursor(urlsafe=self.request.get('cursor'))
-			limit = self.request.get('limit')
-			if not limit:
-				limit=30
-			else:
-				limit=int(limit)
 
-			userList, next_curs, more= DB_AppUser.query().order(-DB_AppUser.joinDate).fetch_page(limit, start_cursor=curs)
-			values['userList'] = userList
-			values['next_curs'] = next_curs
-			values['more'] = more
-			values['limit'] = limit
 
 		if path == '/developcenter/appView_log.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			curs = Cursor(urlsafe=self.request.get('cursor'))
-			auser = self.request.get('auser')
-			category = self.request.get('category')
-			limit = self.request.get('limit')
-			if not limit:
-				limit=30
-			else:
-				limit=int(limit)
-
-			if auser:
-				auserkey = DB_AppUser.get_by_id(int(auser)) #ndb.Key('DB_AppUser',auser).get()
-				#delta = auserkey.lastDate - auserkey.joinDate
-				#values['activeTime']= int(delta.total_seconds())
+			if filterfield=='auid':
+				auserkey = DB_AppUser.get_by_id(int(filtervalue)) #ndb.Key('DB_AppUser',auser).get()
 				values['auInfo']=auserkey
 
 			##logList = DB_AppLog.query().order(-DB_AppLog.time).fetch()
-			values['auser']=auser
-			values['limit'] = limit
-			values['category']=category
-		
-		if path == '/developcenter/appView_log_data.html':		####################################################################
+
+
+		if path == '/developcenter/appView_data.html': ############################################################################
 			namespace_manager.set_namespace(appNamespace)
+			db = self.request.get('db')
+			mode = self.request.get('mode')
+			dataid = self.request.get('id')
 			curs = Cursor(urlsafe=self.request.get('cursor'))
-			auser = self.request.get('auser')
-			category = self.request.get('category')
-			limit = self.request.get('limit')
-			if not limit:
-				limit=30
-			else:
-				limit=int(limit)
 
-			if auser:
-				auserkey = DB_AppUser.get_by_id(int(auser)) #ndb.Key('DB_AppUser',auser).get()
-				#delta = auserkey.lastDate - auserkey.joinDate
-				#values['activeTime']= int(delta.total_seconds())
-				values['auInfo']=auserkey
-				logList, next_curs, more=DB_AppLog.query(DB_AppLog.auInfo==auserkey.key).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
-			elif category:
-				values['category']=category
-				logList, next_curs, more=DB_AppLog.query(DB_AppLog.category==category).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
-			else:
-				logList, next_curs, more=DB_AppLog.query().order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+			if not limit: limit=30
+			else: limit=int(limit)
+			datalist=[]
+			jsondata={}
 			
-			##logList = DB_AppLog.query().order(-DB_AppLog.time).fetch()
-			values['auser']=auser
-			values['logList'] = logList
-			values['next_curs'] = next_curs
-			values['more'] = more
-			values['limit'] = limit
 
+			if mode == "delete":
+				data = ndb.Key(db,dataid).get()
+				if not data: data = ndb.Key(db,int(dataid)).get()
+				if data:
+					logging.info(data.to_dict())
+					data.key.delete()
+					self.response.write('{"result":"ok"}')
+				return
+
+			if mode == "edit":
+				datafield = self.request.get('field')
+				datavalue = self.request.get('value')
+				logging.info("#############################a")
+				logging.info(datafield)
+				logging.info(datavalue)
+				logging.info("#############################b")
+				data = ndb.Key(db,dataid).get()
+				if not data: data = ndb.Key(db,int(dataid)).get()
+				if data:
+
+					try:
+						if (type(datavalue)==str or type(datavalue)==unicode) and datavalue[0]=="{" and datavalue[-1]=="}":
+							logging.info('its json')
+							datavalue=json.loads(datavalue)
+							logging.info(datavalue)
+					except:
+						pass
+
+					try:
+						exec('data.'+datafield+' = datavalue')
+					except:
+						exec('data.'+datafield+' = int(datavalue)')
+					data.put()
+					self.response.write('{"result":"ok"}')
+				return
+
+			if db == 'DB_AppLog': # ----------------------------------------------------------------------------------
+				if filterfield=='auid':
+					auserkey = ndb.Key('DB_AppUser', int(filtervalue))
+					datalist, next_curs, more=DB_AppLog.query(DB_AppLog.auInfo==auserkey).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+				elif filterfield=='category':
+					datalist, next_curs, more=DB_AppLog.query(DB_AppLog.category==filtervalue).order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+				else:
+					datalist, next_curs, more=DB_AppLog.query().order(-DB_AppLog.time).fetch_page(limit, start_cursor=curs)
+
+			if db == 'DB_AppUser': # ----------------------------------------------------------------------------------
+				datalist, next_curs, more=DB_AppUser.query().order(-DB_AppUser.joinDate).fetch_page(limit, start_cursor=curs)
+
+			if db == 'DB_AppStats': # ----------------------------------------------------------------------------------
+				datalist, next_curs, more=DB_AppStats.query().order(-DB_AppStats.ymd).fetch_page(limit, start_cursor=curs)
+				todaynumber = int(time.strftime("%Y%m%d", time.localtime(time.time())))
+				todayStat = DB_AppStats(statsData = DB_AppStats.getInMC(), ymd=todaynumber)
+				datalist.insert(0,todayStat)
+			
+			if db == 'DB_AppStage': # ----------------------------------------------------------------------------------
+				datalist, next_curs, more=DB_AppStage.query().order(-DB_AppStage.createTime).fetch_page(limit, start_cursor=curs)
+			
+			if db == 'DB_AppNotice': # ----------------------------------------------------------------------------------
+				datalist, next_curs, more=DB_AppNotice.query().order(-DB_AppNotice.createTime).fetch_page(limit, start_cursor=curs)
+
+			if db == 'DB_AppGiftcode': # ----------------------------------------------------------------------------------
+				datalist, next_curs, more=DB_AppGiftcode.query().order(-DB_AppGiftcode.createTime).fetch_page(limit, start_cursor=curs)
+
+			if db == 'DB_AppVersions': # ----------------------------------------------------------------------------------
+				datalist, next_curs, more=DB_AppVersions.query().order(-DB_AppVersions.createTime).fetch_page(limit, start_cursor=curs)
+
+			if db == 'DB_AppFeedback': # ----------------------------------------------------------------------------------
+				if filterfield=='sender':
+					auserkey = ndb.Key('DB_AppUser', int(filtervalue))
+					datalist, next_curs, more=DB_AppFeedback.query(DB_AppFeedback.sender==auserkey).order(-DB_AppFeedback.createTime).fetch_page(limit, start_cursor=curs)
+				else:
+					datalist, next_curs, more=DB_AppFeedback.query().order(-DB_AppFeedback.createTime).fetch_page(limit, start_cursor=curs)
+
+			jsondata['list'] = []
+			for f in datalist:
+			  jsondata['list'].append(f.toResult())
+
+			jsondata['filtervalue'] = filtervalue
+			jsondata['filterfield'] = filterfield
+			if next_curs: jsondata['cursor'] = str(next_curs.urlsafe())
+			else: jsondata['cursor']= ""
+			jsondata['aID'] = aID
+			jsondata['more'] = more
+			jsondata['limit'] = limit
+			result= json.dumps(jsondata,encoding="utf-8",ensure_ascii=False)
+			#result = json.encode(values)
+			self.response.write(result)
+			return
 		if path == '/developcenter/appView_giftcode.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['giftcodeList']=DB_AppGiftcode.query().order(-DB_AppGiftcode.createTime).fetch()
 
 		if path == '/developcenter/appView_rank.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
 			setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
+
 			curs = Cursor(urlsafe=self.request.get('cursor'))
 			limit = self.request.get('limit')
 			auser = self.request.get('auser')
@@ -262,29 +377,14 @@ class DevelopCenterHandler(SessionBaseHandler):
 
 			values['limit'] = limit
 			values['auser'] = auser
+			sqlClose()
 
 		if path == '/developcenter/appView_stats.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			
-			
-			curs = Cursor(urlsafe=self.request.get('cursor'))
-			limit = self.request.get('limit')
-			if not limit:
-				limit=30
-			else:
-				limit=int(limit)
 
-			statList, next_curs, more=DB_AppStats.query().order(-DB_AppStats.ymd).fetch_page(limit, start_cursor=curs)
-			todayStat = {"statsData":DB_AppStats.getInMC(), "ymd":"today"}
-			statList.insert(0,todayStat)
-			values['statList'] = statList
-			values['next_curs'] = next_curs
-			values['more'] = more
-			values['limit'] = limit
 
 		if path == '/developcenter/appView_stages.html':		####################################################################
 			namespace_manager.set_namespace(appNamespace)
-			values['list']=DB_AppStage.query().order(-DB_AppStage.createTime).fetch()
 
 		if doRender(self,path,values):
 			return
@@ -404,7 +504,10 @@ class DevelopCenterHandler(SessionBaseHandler):
 			#newApp.scoresSortType = self.request.get('scoresSortType')
 			newApp.scoresSortValue = int(self.request.get('scoresSortValue'))
 			newApp.developer = developer.key
-			newApp.dbInstance = CLOUDSQL_INSTANCE
+
+			global GD_CLOUDSQL_CONNECT
+			
+			newApp.dbInstance = GD_CLOUDSQL_CONNECT
 
 			try:
 				newApp.put()
@@ -412,18 +515,18 @@ class DevelopCenterHandler(SessionBaseHandler):
 				self.response.write('error : change aID')
 				return
 
-			createDatabaseAndConnect(aid=newApp.aID,instance=CLOUDSQL_INSTANCE)
-			DB_AppScores.createTable()
-			DB_AppWeeklyScores.createTable()
-			DB_AppMaxScores.createTable()
-			
+			try:
+				createDatabaseAndConnect(aid=newApp.aID,instance=CLOUDSQL_INSTANCE)
+				DB_AppScores.createTable()
+				DB_AppWeeklyScores.createTable()
+				DB_AppMaxScores.createTable()
+			except:
+				self.response.write("score db did not created <br>")
 			self.response.write('<a href=appmanager.html>appmanager</a>')
 		if path == '/developcenter/appView.html': #####################################
 			if not aInfo:
 				self.response.write('check aID')
 				return
-			logging.info(self.request)
-			logging.info(self.request.get('store'))
 			namespace_manager.set_namespace(gdNamespace)
 			aInfo.title = self.request.get('title')
 			aInfo.group = self.request.get('group')
@@ -458,7 +561,6 @@ class DevelopCenterHandler(SessionBaseHandler):
 													self.request.get('secretKey')
 													).replace(" ","")
 			arglist=self.request.arguments()
-			logging.info(values['enctoken'])
 			for arg in arglist:
 				values[arg]=self.request.get(arg)
 
@@ -524,6 +626,36 @@ class DevelopCenterHandler(SessionBaseHandler):
 			values['msg']='save new data'
 			self.redirect(path+"?aID="+self.request.get('aID'))
 			#doRender(self,path,values)
+		
+		if path =='/developcenter/appView_feedback.html':######################################
+			namespace_manager.set_namespace(appNamespace)
+			auid = self.request.get('userid')
+			touser =  DB_AppUser.get_by_id(int(auid))
+			if not touser:
+				self.response.write('do not find user')
+				return
+
+
+			newfeed = DB_AppFeedback()
+			newfeed.sender = touser.key
+			newfeed.category = self.request.get('category')
+			newfeed.content = self.request.get('content')
+			newfeed.mode = "send"
+			if self.request.get('userdata'):
+				newfeed.userdata=json.loads(self.request.get('userdata'))
+			newfeed.put()
+
+			newRequest = {}
+			newRequest['rid'] = newfeed.key.id()
+			newRequest['sender'] = {'type':'app','id':aInfo.key.id(),'name':aInfo.title}
+			newRequest['category'] = newfeed.category
+			newRequest['content'] = newfeed.content
+			newRequest['userdata']=newfeed.userdata
+			touser.requests.insert(0,newRequest)
+			touser.put()
+
+
+			self.redirect(path+"?aID="+self.request.get('aID'))
 
 class ImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
@@ -549,6 +681,7 @@ class ImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
   def get(self):
 	user = users.get_current_user()
+	mode = self.request.get('mode')
 
 	uploadUrl = blobstore.create_upload_url('/developcenter/imageselector')
 	

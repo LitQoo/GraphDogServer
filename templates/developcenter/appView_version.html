@@ -7,25 +7,21 @@
 	{% if msg %}
 {{msg}}
 	{% else %}
-		<table width=100% border=1>
+
+	<table class="datalist" source="appView_data.html" db="DB_AppVersions" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
+
 			<tr>
-				<td>version</td>
-				<td>graphdog Version</td>
-				<td>platform</td>
-				<td>comment</td>
-				<td>time</td>
+				<th field="version">version</th>
+				<th field="apiVersion" editor="text">graphdog Version</th>
+				<th field="platform">platform</th>
+				<th field="comment" editor="text">comment</th>
+				<th field="createtime" convert="timeToDate">time</th>
+
 			</tr>
-		{% for version in versionList %}
-			<tr>
-				<td>{{version.version}}</td>
-				<td>{{version.apiVersion}}</td>
-				<td>{{version.platform}}</td>
-				<td>{{version.comment}}</td>
-				<td>
-					{{version.createTime}}
-				</td>
-			</tr>
-		{%endfor%}
+	</thead>
+	<tbody>
+	</tbody>
 	</table>
 	{% endif %}
 {% endblock %}

@@ -32,8 +32,6 @@ from SessionBaseHandler import *
 
 class CommandHandler(SessionBaseHandler):
 	def post(self):
-		logging.info('self.request')
-		logging.info(self.request)
 
 		token = self.request.get('token')
 		version = self.request.get('appver')
@@ -74,13 +72,14 @@ class CommandHandler(SessionBaseHandler):
 			commands = json.loads(cmdtext) #decParam(self.request.get('command'))
 		
 		tokens = CommandHandler.decToken(token,aInfo.secretKey)
+		
+		if not tokens.get('createTime'):
+			logging.critical('hack')
+			self.response.write('network state error')
+			return
 
 		namespace_manager.set_namespace(appNamespace)
 
-		logging.info('tokens')
-		logging.info(tokens)
-		logging.info('session')
-		logging.info(self.session)
 
 		DB_AppStats.countStatHour('request')
 		
@@ -89,8 +88,7 @@ class CommandHandler(SessionBaseHandler):
 
 		#result = {'timestamp':int(cTime),'createTime':str(cTime), 'version':version}
 		if not self.session.get('aID') or self.session.get('aID')!=aID:	#login ##########################################################################
-			logging.info('start authorise' + str(tokens.get('auID')))
-			
+
 			appver = self.request.get('appver')
 			if not appver:
 				appver='0'
@@ -107,7 +105,6 @@ class CommandHandler(SessionBaseHandler):
 			#auID있으면 au정보 뽑아오기~
 			if tokens.get('auID'):
 				try:
-					logging.info('finded by auID : '+str(tokens['auID']))
 					auInfo = DB_AppUser.get_by_id(tokens['auID'])
 					#key =  ndb.Key(urlsafe=tokens['auID'])
 					#auInfo = key.get()
@@ -117,7 +114,7 @@ class CommandHandler(SessionBaseHandler):
 			#auID존재여부확인 , ctime check && uuid check  and appuser.createTime == tokens.get('createTime')
 			# and auInfo.createTime == tokens.get('createTime')
 			if auInfo and auInfo.udid == tokens.get('udid'):	#and auInfo.udid == tokens.get('udid')
-				logging.info("user finded")
+
 
 				if not cTime:
 					cTime=0
@@ -131,6 +128,11 @@ class CommandHandler(SessionBaseHandler):
 					DB_AppStats.countStatKey('hitPlatform',tokens.get('platform'))
 					DB_AppStats.countStatKey('hitLanguage',tokens.get('lang'))
 					DB_AppStats.countStatKey('version',str(version))
+					
+					if not auInfo.loginCount:
+						auInfo.loginCount=0
+					else:
+						auInfo.loginCount+=1
 				# name , flag update after check
 				#if tokens.get('nick') and tokens.get('flag'):
 					#logging.info('chage the nick & flag key:'+str(auInfo.uInfo.key))
@@ -145,10 +147,7 @@ class CommandHandler(SessionBaseHandler):
 				if auInfo.version != int(version):
 					DB_AppStats.countStatHour('update')
 
-				if not auInfo.loginCount:
-					auInfo.loginCount=0
-				else:
-					auInfo.loginCount+=1
+
 				
 				auInfo.createTime=str(cTime)
 				auInfo.version = int(version)
@@ -159,14 +158,12 @@ class CommandHandler(SessionBaseHandler):
 
 			elif tokens.get('createTime')=='9999':	#join
 				#find at user table by udid
-				logging.info("user dont finded")
 				uInfo = {}
 				namespace_manager.set_namespace(gdNamespace)
 				que = DB_User.query(DB_User.udid == tokens.get('udid'))
 				find = que.fetch(limit=1)
 				namespace_manager.set_namespace(appNamespace)
 				if len(find)>0: #회원정보찾음
-					logging.info("find uid by udid")
 					uInfo = find[0]
 					if not tokens.get('nick'):
 						tokens['nick']=uInfo.nick
@@ -178,12 +175,10 @@ class CommandHandler(SessionBaseHandler):
 						namespace_manager.set_namespace(appNamespace)
 						q = DB_AppUser.query(DB_AppUser.uInfo == uInfo.key)
 						for a in q.fetch(limit=1):
-							logging.info("find auid in installs")
 							auInfo = a
 
 
 				else:	#don't find
-					logging.info("dont find uid by udid")
 					#join
 					namespace_manager.set_namespace(gdNamespace)
 					uInfo = DB_User()
@@ -194,7 +189,6 @@ class CommandHandler(SessionBaseHandler):
 					namespace_manager.set_namespace(appNamespace)
 				
 				if not auInfo: # if not app user , app join 
-					logging.info("join appuser")
 					auInfo = DB_AppUser()
 					auInfo.nick = tokens.get('nick')
 					auInfo.flag = tokens.get('flag')
@@ -216,11 +210,9 @@ class CommandHandler(SessionBaseHandler):
 
 					#cpiEvents check get
 					if len(uInfo.CPIEvents)>0:
-						logging.info('check cpievent')
 						i=0
 						for cpi in uInfo.CPIEvents:
 							if aID == cpi.get('eventAppID'):
-								logging.info('find cpi Event')
 								namespace_manager.set_namespace('APP_'+cpi.get('fromAppID'))
 								#newRequest = DB_AppRequest()
 								#newRequest.receiver = ndb.Key('DB_AppUser',int(cpi.get('fromAppUserID')))
@@ -244,9 +236,6 @@ class CommandHandler(SessionBaseHandler):
 									fromAppUserInfo.requests = [newRequest]
 
 								fromAppUserInfo.put()
-								logging.info('add cpirequest')
-								logging.info(newRequest)
-								logging.info(fromAppUserInfo.nick)
 
 								namespace_manager.set_namespace(gdNamespace)
 								del uInfo.CPIEvents[i]
@@ -258,7 +247,6 @@ class CommandHandler(SessionBaseHandler):
 							i=i+1
 			else :
 				self.printError('authorise error11',9999,aInfo.secretKey)
-				logging.info(tokens.get('createTime'))
 				return
 
 
@@ -270,16 +258,14 @@ class CommandHandler(SessionBaseHandler):
 			
 			self.session['aID']=aID
 			self.session['auID']=auInfo.key.id()
-			logging.info('session update!! :'+aID+":"+str(auInfo.key.id()))
-			logging.info('session auid:'+str(self.session.get('auID')))
-			logging.info('session aid:'+str(self.session.get('aID')))
-			logging.info('session cTime:'+str(cTime))
 			auInfo.createTime=str(cTime)
 			auInfo.version = int(version)
 			tokens['createTime']=str(cTime)
-			logging.info(json.dumps(allresult))
-			self.response.write(CommandHandler.strToDesInBase64(json.dumps(allresult),aInfo.secretKey).strip())
-			return
+
+			auInfo.putOn()
+			#logging.info(json.dumps(allresult))
+			#self.response.write(CommandHandler.strToDesInBase64(json.dumps(allresult),aInfo.secretKey).strip())
+			#return
 
 
 		if self.session.get('auID'):
@@ -293,22 +279,19 @@ class CommandHandler(SessionBaseHandler):
 			return
 
 		#token check
-		if tokens.get('createTime')!=auInfo.createTime:
-			logging.info("####################### cTime ERROR #############################")
-			#self.printError('token Error',9999,aInfo.secretKey)
-			#return
+		#if tokens.get('createTime')!=auInfo.createTime:
+		#self.printError('token Error',9999,aInfo.secretKey)
+		#return
 
 
 
 
+		setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 
 		for commandID,command in commands.items():
-			logging.info('########################### start command ###############################')
 			actions=[command.get('a')]
 			action=command.get('a')
 			param=command.get('p')
-			logging.info(action)
-			logging.info(param)
 
 			#기본리턴값
 			result = {'action':actions[0]}
@@ -322,9 +305,6 @@ class CommandHandler(SessionBaseHandler):
 				self.session['auID']=''
 				self.session['aID']=''
 				allresult[commandID]=self.createError('logout',100)
-				
-				logging.info('session auid:'+self.session.get('auID'))
-				logging.info('session aid:'+self.session.get('aID'))
 				continue
 
 
@@ -380,7 +360,6 @@ class CommandHandler(SessionBaseHandler):
 				if not gType:
 					gType = 'default'
 
-				logging.info('startscores')
 				#DB_AppScore.sTime==startTime
 				nowdate = datetime.date.today().strftime("%Y%m%d")
 				flaglist =  DB_AppFlagScore.query(ndb.AND(DB_AppFlagScore.date==nowdate,DB_AppFlagScore.gType==gType)).order(-DB_AppFlagScore.score).fetch(10)
@@ -426,8 +405,7 @@ class CommandHandler(SessionBaseHandler):
 
 			#action startscores
 			if 'startscores' in actions:#~ ##########################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
-				logging.info('startscores')
+				
 				sortValue=aInfo.scoresSortValue
 			#param ->  type, score, userdata, 
 				gType = param.get('type')
@@ -478,8 +456,6 @@ class CommandHandler(SessionBaseHandler):
 					baseSID=DB_AppScores.set(baseSIDs[0])
 					self.session['baseScoreID']=baseSID.asid
 
-				logging.info('set base id')
-				logging.info(baseSID.to_dict())
 
 				self.session['asID2']=asInfo2.asid
 				########################################################
@@ -489,23 +465,10 @@ class CommandHandler(SessionBaseHandler):
 				##self.session['asID']=asInfo.key.id()
 				self.session['gType']=str(gType)
 
-				logging.info(namespace_manager.get_namespace())
-				logging.info(str(self.session.get('asID')))
-				logging.info(str(self.session.get('asSortTime')))
-				logging.info(str(self.session.get('auID')))
-				logging.info(str(self.session.get('aID')))
-				logging.info(str(self.session.get('gType')))
 
 				result['state']='ok'
 
 			if 'getscores' in actions: ##########################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
-				logging.info(namespace_manager.get_namespace())
-				logging.info(str(self.session.get('asID')))
-				logging.info(str(self.session.get('asSortTime')))
-				logging.info(str(self.session.get('auID')))
-				logging.info(str(self.session.get('aID')))
-				logging.info(str(self.session.get('gType')))
 				
 				asInfo2 = DB_AppScores.get(int(self.session.get('asID2')))
 
@@ -547,7 +510,6 @@ class CommandHandler(SessionBaseHandler):
 				if asInfo2.isOver:
 					##asInfo.eTime = cTime
 					asInfo2.eTime = cTime
-					logging.info(self.session.get('asID'))
 
 					#flag scores update
 					nowdate = datetime.date.today().strftime("%Y%m%d")
@@ -575,8 +537,7 @@ class CommandHandler(SessionBaseHandler):
 
 					##weeklydata = DB_AppWeeklyScore.get_or_insert(weekid)
 					weeklydata = DB_AppWeeklyScores.get_or_insert(weekid)
-					logging.info(weeklydata.to_dict())
-					logging.info(nowweek)
+
 					if weeklydata.score<asInfo2.score or weeklydata.week != nowweek:
 						weeklydata.week=nowweek
 						weeklydata.gType=asInfo2.gType
@@ -587,7 +548,6 @@ class CommandHandler(SessionBaseHandler):
 						weeklydata.sTime = asInfo2.uTime
 						weeklydata.eTime = asInfo2.eTime
 						weeklydata.userdata = asInfo2.userdata
-						logging.info(weeklydata.to_dict())
 						weeklydata.put()
 						result['newweeklyscore']=True
 						
@@ -624,11 +584,7 @@ class CommandHandler(SessionBaseHandler):
 					##result['myrank'] = result.get('alluser')-DB_AppScore.query(ndb.AND(DB_AppScore.sTime.IN(asSortTimeList),DB_AppScore.gType==gType,DB_AppScore.score<=asInfo.score)).count()+1
 					result['myrank'] = DB_AppScores.count("WHERE no>%s AND gType='%s' AND score>%s"%(baseScoreID,gType,asInfo2.score))+1
 
-				logging.info('myrank is')
-				logging.info(result['myrank'])
 
-				logging.info('myscore is')
-				logging.info('info '+str(asInfo2.score))
 
 				#asInfo = future.get_result()
 				isAddMe=False
@@ -749,7 +705,6 @@ class CommandHandler(SessionBaseHandler):
 
 				#asInfo.put()
 			if 'getmaxscores' in actions: ###############################################################################
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				if not gType:
 					gType = 'default'
@@ -808,7 +763,6 @@ class CommandHandler(SessionBaseHandler):
 
 			if 'getweeklyscores' in actions: ################################################################################
 
-				setSqlConnect(aid=aInfo.aID,instance=aInfo.dbInstance)
 				gType = param.get('type')
 				if not gType:
 					gType = 'default'
@@ -964,17 +918,14 @@ class CommandHandler(SessionBaseHandler):
 
 				if category:
 					if type(category)==list:
-						logging.info('category is list')
 						categorys = category
 					elif category!='all':
 							categorys = [category]
-							logging.info('category is str')
 
 
 				if not limit:
 					limit = 10
 				
-				logging.info(categorys)
 
 				if type(auInfo.requests) != list:
 					auInfo.requests=[]
@@ -1011,8 +962,6 @@ class CommandHandler(SessionBaseHandler):
 					requestDict['content']=notice.content
 					requestDict['userdata']=notice.userdata
 					auInfo.requests.insert(0,requestDict)
-					logging.info('add notice')
-					logging.info(requestDict)
 
 					if notice.count:
 						notice.count+=1
@@ -1021,7 +970,6 @@ class CommandHandler(SessionBaseHandler):
 					notice.put()
 					
 				if type(auInfo.requests) == list and len(auInfo.requests)>0:
-					logging.info('auto remove')
 					resultList = []
 					for request in auInfo.requests:
 						if request.get('category') in categorys:
@@ -1029,7 +977,6 @@ class CommandHandler(SessionBaseHandler):
 
 							if request.get('category') in autoremoves:
 								auInfo.requests.remove(request)
-								logging.info(request)
 					
 					auInfo.putOn()
 					result['list']=resultList
@@ -1083,15 +1030,12 @@ class CommandHandler(SessionBaseHandler):
 					cpiReward = {'default':1000}
 
 				for cpi in cpiList:
-					logging.info(cpi.key.id())
 
 					if cpi.key.id() == aID:
-						logging.info('self app continue')
 						continue
 
 					# 1. 이미설치된 앱인가 검사
 					if cpi.key.id() in user.installs:
-						logging.info('installed app continue')
 						continue
 
 					# 2. cpievent 중인가 검사
@@ -1106,7 +1050,6 @@ class CommandHandler(SessionBaseHandler):
 					#	logging.info('cping  app continue')
 					#	continue
 
-					logging.info('add cpievent')
 					cpidict = {}
 					cpidict['id']=cpi.key.id()
 					cpidict['title']=cpi.title
@@ -1172,7 +1115,6 @@ class CommandHandler(SessionBaseHandler):
 					user.CPIEvents=[newCpiEvent]
 
 				user.put()
-				logging.info(newCpiEvent)
 
 				namespace_manager.set_namespace(appNamespace)
 
@@ -1250,20 +1192,18 @@ class CommandHandler(SessionBaseHandler):
 				result['userdata']=auInfo.userdata
 				result['state']='ok'
 
-			logging.info(result)
 			allresult[commandID]=copy.deepcopy(result)
 			result.clear()
-			logging.info('########################### end command ###############################')
 		namespace_manager.set_namespace(appNamespace)
+		sqlClose()
+		
 		#put
 		auInfo.doPut()
 		#uInfo.doPut()
 		#결과리턴
 		resultStr = json.dumps(allresult,encoding="utf-8",ensure_ascii=False)
-		logging.info("version 4")
 		resultStr = CommandHandler.strToDesInBase64(resultStr,aInfo.secretKey)
 		self.response.write(resultStr.strip())
-		logging.info(resultStr)
 		
 	
 
@@ -1366,8 +1306,6 @@ class CommandHandler(SessionBaseHandler):
 		return token
 
 	def printError(self,msg,code,skey):
-		logging.info("print error"+msg)
-		logging.info("print error"+str(code))
 		re = {'state':'ok','error':msg, 'errorcode':code}
 		text = CommandHandler.strToDesInBase64(json.dumps(re),skey)
 		self.response.write(text.strip())

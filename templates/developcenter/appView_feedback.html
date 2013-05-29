@@ -1,0 +1,39 @@
+{% extends 'appView_base.html' %}
+{% block editor %}
+<form action=appView_feedback.html method=post>
+	<input type=hidden name=aID value={{aID|safe}}>
+			to userID : <input type=text name=userid value={{filtervalue}}><br>
+			category:<input type=text name=category value={{data.category|safe}}><br>
+			content:<textarea cols=50 rows=10 name=content></textarea><br>
+			userdata<br>
+			<div id='userdata' class='jsonForm' value='{}'></div>
+			<input type=submit value='save'>
+</form>
+{% endblock %}
+
+{% block list %} 
+	{% if msg %}
+{{msg}}
+	{% else %}
+
+
+	<table class="datalist" source="appView_data.html" db="DB_AppFeedback" info='{"aID":"{{aID}}","filterfield":"{{filterfield}}","filtervalue":"{{filtervalue}}","limit":"{{limit}}"}'>
+	<thead>
+
+			<tr>
+				<th field="mode">state</th>
+				<th field="category">category</th>
+				<th field="sender" index="on">user</th>
+				<th field="content">content</th>
+				<th field="state" editor="text">state</th>
+				<th field="userdata" convert="jsondata" editor="jsonform">userdata</th>
+				<th field="createtime" convert="timeToDate">date</th>
+				<th deletebutton="on">del</th>
+			</tr>
+	</thead>
+	<tbody>
+	</tbody>
+	</table>
+
+	{% endif %}
+{% endblock %}

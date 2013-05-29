@@ -247,6 +247,46 @@ var chageToJsonForm = function(){
 	})
 }
 
+$(document).ready(function() {
+			$('body').on('click','.addnew',jsonForm_addField)
+			$('body').on('change','.jsonForminput',jsonForm_changeValue)
+			$('body').on('change','.jsonFormselect',jsonForm_changeType)
+			$('body').on('change','.jsonFormText',function(e){
+				formid=$(this).attr('formid')
+				$('#'+formid).attr('value',$(this).val())
+				r = jsonToForm(formid)
+				$('#'+formid+'_value').html(r)
+				JsonFormData(formid,JSON.parse($('#'+formid).attr('value')))
+				//alert('change')
+			})
+
+			chageToJsonForm()
+			//alert($('#type_jsonForm_stringkey').val())
+			
+		});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //datalist 
 ///////////////////////////////////////////////////////////////////////////////
@@ -313,8 +353,6 @@ var jsonToStatsTable = function(stats){
 }
 
 var tddataConvert= function(tddata,convert){
-	console.log(tddata+convert)
-	console.log(JSON.stringify(tddata))
 	convertData =""
 	if(convert=="timeToDate"){
 		convertData=timeToDate(tddata,"%Y/%M/%d %H:%m:%s")
@@ -325,7 +363,6 @@ var tddataConvert= function(tddata,convert){
 	}else{
 		convertData=tddata   							
 	}
-	console.log(convertData)
 	return convertData
 }
 
@@ -422,14 +459,14 @@ $(document).ready(function(){               //ajax실행중 loading글씨 보이
    							resultcode+='<td class="datafield '+viewlist[key]['class']+'" info=\'{"aID":"'+data['aID']+'","id":"'+datalist[i]['id']+'","db":"'+$('.datalist').attr('db')+'","field":"'+viewlist[key]['field']+'"}\' editor="'+viewlist[key]['editor']+'" convert="'+viewlist[key]['convert']+'" valueType="'+tdvaluetype+'" value=\''+tdvalue+'\'>'
    								
    							
-	   						if(viewlist[key]['index']=="on"){
-	   							filename = location.pathname.split('/').slice(-1)[0]
-	   							resultcode+='<a href='+filename+'?aID='+data['aID']+'&'+'limit='+data['limit']+'&filterfield='+viewlist[key]['field']+'&filtervalue='+datalist[i][viewlist[key]['field']]+'>'
-	   						}
+	   						//if(viewlist[key]['index']=="on"){
+	   						//	filename = location.pathname.split('/').slice(-1)[0]
+	   						//	resultcode+='<a href='+filename+'?aID='+data['aID']+'&'+'limit='+data['limit']+'&filterfield='+viewlist[key]['field']+'&filtervalue='+datalist[i][viewlist[key]['field']]+'>'
+	   						//}
 
 	   						resultcode+=tddataConvert(tddata,viewlist[key]['convert'])
 
-	   						if(viewlist[key]['index']=="on")resultcode+='</a>'
+	   						//if(viewlist[key]['index']=="on")resultcode+='</a>'
 
 
    							resultcode+="</td>"
@@ -501,12 +538,10 @@ $(document).ready(function(){               //ajax실행중 loading글씨 보이
 
    $('body').on('click','.cancelbtn',function(){
    		edittr = $('td[isEditing=on]').last()
-   		console.log(edittr.attr('convert'))
-   		console.log(getAttrValue(edittr))
    		
    		edittr.html(tddataConvert(getAttrValue(edittr),edittr.attr('convert')))
    		
-   		edittr.attr('isEditing','off')
+   		edittr.removeAttr('isEditing')
    })
    
    $('body').on('click','.editbtn',function(){
@@ -540,22 +575,111 @@ $(document).ready(function(){               //ajax실행중 loading글씨 보이
 
    if($('.datalist').length>0)nextlist()
 
+   $(".datalist > thead > tr > th").each(function(index,item){
+   		datatable = $('.datalist').attr('info')
+		info = JSON.parse(datatable)
+
+   		if($(this).attr('index')=="on"){
+   			headname = $(this).html()
+   			$(this).attr('view',headname)
+
+   			clearbtn=""
+   			if(info['filterfield']==$(this).attr('field')){
+				clearbtn = " <input type=button value='clear filter' class='clearfilter'>"
+			}
+   			$(this).html("<a href=#a class='filterlink'>"+headname+"</a>"+clearbtn)	
+   		}
+   		
+
+   });
+
+	$('body').on('click','.filterlink',function(){
+		head = $(this).parent("th")
+		datatable = $('.datalist').attr('info')
+		info = JSON.parse(datatable)
+		ftvalue = ""
+		if(info['filterfield']==head.attr('field')){
+			ftvalue = info['filtervalue']
+		}
+		head.html(head.attr('view')+"<br><input type=text class='filtervalue' value='"+ftvalue+"'><input type=button value='filter' class='dofilter'><input type=button value='x' class='cancelfilter'>")
+   })
+
+	$('body').on('click','.cancelfilter',function(){
+		head = $(this).parent("th")
+   		datatable = $('.datalist').attr('info')
+		info = JSON.parse(datatable)
+
+		clearbtn=""
+   		if(info['filterfield']==head.attr('field')){
+			clearbtn = " <input type=button value='clear filter' class='clearfilter'>"
+		}
+
+		head.html("<a href=#a class='filterlink'>"+head.attr('view')+"</a>"+clearbtn)	
+	})
+
+	$('body').on('click','.dofilter',function(){
+		head = $(this).parent("th")
+		datatable = $('.datalist').attr('info')
+		info = JSON.parse(datatable)
+
+		filename= location.pathname.split('/').slice(-1)[0]
+		url = filename+'?aID='+info['aID']+'&filterfield='+head.attr('field')+'&filtervalue='+head.children('.filtervalue').val()
+		
+		$(location).attr('href',url);
+
+	})
+
+	$('body').on('click','.clearfilter',function(){
+		head = $(this).parent("th")
+		datatable = $('.datalist').attr('info')
+		info = JSON.parse(datatable)
+
+		filename= location.pathname.split('/').slice(-1)[0]
+		url = filename+'?aID='+info['aID']
+		
+		$(location).attr('href',url);
+
+	})
 });  
 
-$(document).ready(function() {
-			$('body').on('click','.addnew',jsonForm_addField)
-			$('body').on('change','.jsonForminput',jsonForm_changeValue)
-			$('body').on('change','.jsonFormselect',jsonForm_changeType)
-			$('body').on('change','.jsonFormText',function(e){
-				formid=$(this).attr('formid')
-				$('#'+formid).attr('value',$(this).val())
-				r = jsonToForm(formid)
-				$('#'+formid+'_value').html(r)
-				JsonFormData(formid,JSON.parse($('#'+formid).attr('value')))
-				//alert('change')
-			})
 
-			chageToJsonForm()
-			//alert($('#type_jsonForm_stringkey').val())
-			
-		});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
